@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<!--
+-->
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" initial-scale=1, maximum-scale=1, minimum-scale=1, width=device-width">
+        <meta name="mobile-web-app-capable" content="yes">
+        <meta name="description"
+          content="Progressive Web Application for serial communication with toy mobile device">
+
+        <title>Tim remote</title>
+
+        <link rel="manifest" href="manifest.json">
+        <link rel="apple-touch-icon" sizes="180x180" href="icons/apple-touch-icon.png">
+        <link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32x32.png">
+        <link rel="icon" type="image/png" sizes="16x16" href="icons/favicon-16x16.png">
+        <link rel="mask-icon" href="icons/safari-pinned-tab.svg" color="#2196f3">
+        <link rel="shortcut icon" href="icons/favicon.ico">
+        <link rel="stylesheet" type="text/css" href="css/index.css">
+    </head>
+    <body>
+        <!--
+        <div id="head2" style="text-align: center;">
+            <h2>Remote Control for Arduino IR Transmitter</h2>
+        </div>
+    -->
+        <div id="butt_block" style="display: flex; justify-content: space-between;">
+        
+            <div style="padding-top: 25px;">
+                <input id="togglesw" type="checkbox" />
+                <label id="labelsw" for="togglesw">
+                    <span id="switch"></span>
+                </label>
+            </div>
+            
+            <div style="padding-top: 56px;">
+                <meter id="battery" name="battery"
+                    min="0" max="9.5"
+                    low="5" high="8" optimum="9"
+                    step= "0.1" value="9">
+            </div>
+            
+            <div style="padding-top: 25px; padding-right: 20px;">           
+                <select id="soflow-color" onchange="copterChange(this.value)">
+                    <option>Syma S107G</option>
+                    <option>Syma S026G</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="glabel" id="lthrottle">Throttle: 0</div>
+        <div class="gauge gauge__liveupdate" id="gaugeth">
+            <div class="gauge--container" id="gauge-container">
+                <div class="gauge--marker"></div>
+                <div class="gauge--background"></div>
+                <div class="gauge--center"></div>
+                <div class="gauge--data"></div>
+                <div class="gauge--needle"></div>
+            </div>
+            <div class="gauge--labels mdl-typography--headline">
+                <span class="gauge--label__low">0</span>
+                <span class="gauge--label__spacer"></span>
+                <span class="gauge--label__high">127</span>
+            </div>
+        </div>
+
+        <div class="glabel" id="lpitch">Pitch: 0</div>
+        <div class="gauge gauge__liveupdate" id="gaugepi">
+            <div class="gauge--container" id="gauge-container">
+                <div class="gauge--marker"></div>
+                <div class="gauge--background"></div>
+                <div class="gauge--center"></div>
+                <div class="gauge--data"></div>
+                <div class="gauge--needle"></div>
+            </div>
+            <div class="gauge--labels mdl-typography--headline">
+                <span class="gauge--label__low">-63</span>
+                <span class="gauge--label__spacer"></span>
+                <span class="gauge--label__high">63</span>
+            </div>
+        </div>
+
+        <div class="glabel" id="lyaw">Yaw: 0</div>
+        <div class="gauge gauge__liveupdate" id="gaugeya">
+            <div class="gauge--container" id="gauge-container">
+                <div class="gauge--marker"></div>
+                <div class="gauge--background"></div>
+                <div class="gauge--center"></div>
+                <div class="gauge--data"></div>
+                <div class="gauge--needle"></div>
+            </div>
+            <div class="gauge--labels mdl-typography--headline">
+                <span class="gauge--label__low">-63</span>
+                <span class="gauge--label__spacer"></span>
+                <span class="gauge--label__high">63</span>
+            </div>
+        </div>
+
+        <div class="slider-wrapper" style="position:absolute; top:520px; left: 50px;">
+            <input type="range" class="range-styled" min="0" max="127" value="0" step="1"
+                id="throttle" oninput="throttleInput(this.value)">
+        </div>
+
+        <div id="pitchyaw" class="zone dynamic active"></div>
+
+        <div id = "diagmsg" style="top: 650;"></div>
+        <script type="text/javascript" src="js/nipplejs.js"></script>
+        <script type="text/javascript" src="js/main.js"></script>
+        <script type="text/javascript" src="js/companion.js" data-service-worker="sw.js"></script>
+    </body>
+</html>

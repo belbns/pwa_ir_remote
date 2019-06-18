@@ -1,0 +1,375 @@
+
+html, body {
+    //position: absolute;
+    //top: 0;
+    //left: 0;
+    //right: 0;
+    //bottom: 0;
+    //padding: 0;
+    //margin: 0;
+    //min-width: 720px;
+    //max-width: 1024px;
+    //width: auto;
+
+
+    height: 720px; //100vh;
+    width: 1024px;
+    //font-family: Varela, Helvetica, Arial, sans-serif;
+    //font-size: 16px;
+    //font-weight: normal;
+    //letter-spacing: normal;
+    //line-height: 32px;
+
+}
+
+body {
+    background-image : url('../img/cockpit1024.jpg');
+    background-repeat: no-repeat;
+}
+
+
+
+#head2 {
+    height: 50px;
+    float: center;
+}
+
+#butt_block {
+    //background: Bisque;
+    background: rgba(255, 255, 255, 0.1);
+    width: 100%;
+    height: 100px;
+    //padding-top: 10px;
+}
+
+
+#term_block {
+    background: LightBlue;
+    width: 100%;
+    height: 500px;
+    border: 5px;
+    border-radius: 25px;
+}
+.myterm {
+    font-family:    Arial, Helvetica, sans-serif;
+    font-size:      32px;
+    font-weight:    bold;
+}
+
+
+/* -------------------- Select Box Styles: stackoverflow.com Method */
+/* -------------------- Source: http://stackoverflow.com/a/5809186 */
+select#soflow, select#soflow-color {
+   -webkit-appearance: button;
+   -webkit-border-radius: 2px;
+   -webkit-box-shadow: 0px 1px 3px rgba(0, 0, 0, 0.1);
+   -webkit-padding-end: 20px;
+   -webkit-padding-start: 2px;
+   -webkit-user-select: none;
+   background-image: url("../icons/15xvbd5.png"), -webkit-linear-gradient(#FAFAFA, #F4F4F4 40%, #E5E5E5);
+   background-position: 97% center;
+   background-repeat: no-repeat;
+   border: 1px solid #AAA;
+   color: #555;
+   font-size: 24px;
+   //margin: 20px;
+   overflow: hidden;
+   //padding: 5px 10px;
+   text-overflow: ellipsis;
+   white-space: nowrap;
+   height: 50px;
+   width: 200px;
+}
+select#soflow-color {
+   color: #fff;
+   background-image: url("../icons/15xvbd5.png"), -webkit-linear-gradient(#779126, #779126 40%, #779126);
+   background-color: #779126;
+   -webkit-border-radius: 20px;
+   -moz-border-radius: 20px;
+   border-radius: 20px;
+   padding-left: 15px;
+}
+
+/* ---- toggle switch */
+#togglesw {
+  /* opacity 0 so that it can be read by screen readers */
+  opacity: 0;
+}
+
+#labelsw {
+  display: inline-block;
+  background: #2c3e50;
+  width: 110px;
+  height: 52px;
+  border-radius: 18px;
+  position: relative;
+  cursor: pointer;
+  background: rgba(255,255,255,0.5);
+}
+
+#switch {
+  position: absolute;
+  width: 46px;
+  height: 46px;
+  margin-top: 3px;
+  margin-left: 3px;
+  border-radius: 15px;
+  background: #c0392b;
+  box-shadow: 5px 0px 28px -9px rgba(0, 0, 0, 0.75);
+  transition: transform 0.2s ease-in;
+}
+
+#toggle:checked ~ #label #switch {
+  background: #2ecc71;
+  transform: translatex(58px);
+  transition: transform 0.2s ease-in;
+}
+
+#toggle:empty {
+    display: none;
+}
+
+#dist_block {
+    padding-top: 5px;
+}
+
+#battery {
+    transform: rotate(180deg);
+    width: 220px;
+    height: 36px;
+    margin-left: 92px;
+}
+
+#btcont {
+    width: 60px;
+    height: 400px;
+}
+
+.gauge {
+    position: relative;
+}
+.gauge--container {
+    margin: 0;
+    padding: 0;
+    position: absolute;
+    left: 50%;
+    overflow: hidden;
+    text-align: center;
+    -webkit-transform: translateX(-50%);
+    -moz-transform: translateX(-50%);
+    -ms-transform: translateX(-50%);
+    -o-transform: translateX(-50%);
+    transform: translateX(-50%);
+}
+.gauge--background {
+    z-index: 0;
+    position: absolute;
+    background-color: #C0D3D3;
+    top: 0;
+    border-radius: 150px 150px 0 0;
+}
+.gauge--data {
+    z-index: 1;
+    position: absolute;
+    background-color: skyblue;
+    margin-left: auto;
+    margin-right: auto;
+    border-radius: 150px 150px 0 0;
+    -webkit-transform-origin: center bottom;
+    -moz-transform-origin: center bottom;
+    -ms-transform-origin: center bottom;
+    -o-transform-origin: center bottom;
+    transform-origin: center bottom;
+}
+.gauge--center {
+    z-index: 2;
+    position: absolute;
+    background-color: midnightblue;
+    margin-right: auto;
+    border-radius: 150px 150px 0 0;
+}
+.gauge--marker {
+    z-index: 3;
+    background-color: midnightblue;
+    position: absolute;
+    width: 1px;
+}
+.gauge--needle {
+    z-index: 4;
+    background-color: #F77C15;
+    height: 3px;
+    position: absolute;
+    -webkit-transform-origin: left center;
+    -moz-transform-origin: left center;
+    -ms-transform-origin: left center;
+    -o-transform-origin: left center;
+    transform-origin: left center;
+}
+.gauge--labels {
+    display: table;
+    margin: 0 auto;
+    position: relative;
+}
+.gauge--label__low {
+    display: table-cell;
+    text-align: center;
+}
+.gauge--label__spacer {
+    display: table-cell;
+}
+.gauge--label__high {
+    display: table-cell;
+    text-align: center;
+}
+.gauge { height: calc(40px + 3em); }
+.gauge--container { width: 80px; height: 40px; }
+.gauge--marker { height: 40px; left: 39.5px; }
+.gauge--background { width: 80px; height: 40px; }
+.gauge--center { width: 748px; height: 24px; top: 16px; margin-left: 16px; }
+.gauge--data { width: 80px; height: 40px; }
+.gauge--needle { left: 40px; top: 37px; width: 40px; }
+.gauge--labels { top: 40px; width: 80px; }
+.gauge--label__low { width: 16px; }
+.gauge--label__spacer { width: 48px; }
+.gauge--label__high { width: 16px; }
+@media only screen and (min-width: 400px) {
+    .gauge { height: calc(50px + 3em); }
+    .gauge--container { width: 100px; height: 50px; }
+    .gauge--marker { height: 100px; left: 49.5px; }
+    .gauge--background { width: 100px; height: 50px; }
+    .gauge--center { width: 60px; height: 30px; top: 20px; margin-left: 20px; }
+    .gauge--data { width: 100px; height: 50px; }
+    .gauge--needle { left: 50px; top: 47px; width: 50px; }
+    .gauge--labels { top: 50px; width: 100px; }
+    .gauge--label__low { width: 20px; }
+    .gauge--label__spacer { width: 60px; }
+    .gauge--label__high { width: 20px; }
+}
+
+.gauge__liveupdate .gauge--data,
+.gauge__liveupdate .gauge--needle {
+    -webkit-transition: all 0.2s ease-in-out;
+    -moz-transition: all 0.2s ease-in-out;
+    -ms-transition: all 0.2s ease-in-out;
+    -o-transition: all 0.2s ease-in-out;
+    transition: all 0.2s ease-in-out;
+}
+.gauge--data {
+    -webkit-transform: rotate(-.50turn);
+    -moz-transform: rotate(-.50turn);
+    -ms-transform: rotate(-.50turn);
+    -o-transform: rotate(-.50turn);
+    transform: rotate(-.50turn);
+}
+.gauge--needle {
+    -webkit-transform: rotate(-.50turn);
+    -moz-transform: rotate(-.50turn);
+    -ms-transform: rotate(-.50turn);
+    -o-transform: rotate(-.50turn);
+    transform: rotate(-.50turn);
+}
+
+#tmsg {
+    position: absolute;
+    top: 720px;
+    left: 20px;
+    color: navy;
+}
+#gaugeth {
+    position: absolute;
+    top: 416px;
+    left: 276px;
+    color: yellow;
+}
+#gaugepi {
+    position: absolute;
+    top: 416px;
+    left: 461px;
+    color: yellow;
+}
+#gaugeya {
+    position: absolute;
+    top: 416px;
+    left: 647px;
+    color: yellow;
+}
+
+
+.glabel {
+    position: absolute;
+    top: 394px;
+    color: yellow;
+}
+#lthrottle {
+    left: 296px;
+}
+#lpitch {
+    left: 484px;;
+}
+#lyaw {
+    left: 666px;
+}
+
+/* slider - Throttle 
+  https://code.i-harness.com/ru/docs/html/element/input/range
+*/
+.slider-wrapper input {
+  width: 520px;
+  height: 72px;
+  margin: 0;
+  transform-origin: 75px 75px;
+  transform: rotate(-90deg);
+}
+input[type=range].range-styled {
+    -webkit-appearance: none;
+    outline: 0;
+    width: 520px;
+    transition: 0.2s;
+    background-color: rgba(255,255,255,0.01);
+}
+input[type=range].range-styled::-webkit-slider-runnable-track {
+    height: 2px;
+    background: lightblue;
+    border: none;
+    border-radius: 3px;
+}
+input[type=range].range-styled::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    height: 72px;
+    width: 72px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.7);
+    margin-top: -34px;
+    vertical-align: middle;
+    border: 5px solid #276FF4;
+    transition: 0.15s;
+    border-color: royalblue;
+}
+input[type=range].range-styled::-webkit-slider-thumb:active {
+    height: 56px;
+    width: 46px;
+    margin-top: -26px;
+}
+
+/* joystick zone */
+.zone {
+  display: none;
+  position: absolute;
+  width: 40%;
+  height: 100%;
+  right: 0;
+}
+.zone.active {
+  display: block;
+}
+.zone > h1 {
+  position: absolute;
+  padding: 10px 10px;
+  margin: 0;
+  color: white;
+  right: 0;
+  bottom: 0;
+}
+.zone.dynamic {
+    background: rgba(255, 255, 255, 0.005);
+}
