@@ -119,13 +119,13 @@ select#soflow-color {
   transition: transform 0.2s ease-in;
 }
 
-#toggle:checked ~ #label #switch {
+#togglesw:checked ~ #labelsw #switch {
   background: #2ecc71;
   transform: translatex(58px);
   transition: transform 0.2s ease-in;
 }
 
-#toggle:empty {
+#togglesw:empty {
     display: none;
 }
 
