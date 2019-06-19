@@ -24,7 +24,7 @@ html, body {
 
 body {
     background: skyblue;
-    background-image : url('../img/cockpit1024.jpg');
+    background-image : url('../img/cockpit1024x540.jpg');
 /*    background-image : url('../img/ch47f.png'); */
     background-repeat: no-repeat;
     //background-attachment: fixed;
@@ -142,7 +142,7 @@ select#soflow-color {
 #battery {
     transform: rotate(180deg);
     width: 220px;
-    height: 36px;
+    height: 20px;
     margin-left: 92px;
 }
 
@@ -277,27 +277,27 @@ select#soflow-color {
 
 #tmsg {
     position: absolute;
-    top: 720px;
-    left: 20px;
+    top: 500px;
+    left: 200px;
     color: navy;
 }
 #gaugeth {
     position: absolute;
-    top: 416px;
+    top: 320px;
     left: calc(var(--left-border) + 276px);
 /*    left: 276px; */
     color: yellow;
 }
 #gaugepi {
     position: absolute;
-    top: 416px;
+    top: 320px;
     left: calc(var(--left-border) + 461px);
 /*    left: 461px; */
     color: yellow;
 }
 #gaugeya {
     position: absolute;
-    top: 416px;
+    top: 320px;
     left: calc(var(--left-border) + 647px);
 /*    left: 647px; */
     color: yellow;
@@ -306,7 +306,7 @@ select#soflow-color {
 
 .glabel {
     position: absolute;
-    top: 394px;
+    top: 300px;
     color: yellow;
 }
 #lthrottle {
@@ -324,18 +324,18 @@ select#soflow-color {
 */
 .slider-wrapper input {
   position:absolute; 
-  width: 520px;
+  width: 400px;
   height: 72px;
   margin: 0;
   transform-origin: 75px 75px;
   transform: rotate(-90deg);
-  top: 520px; 
+  top: 370px; 
   left: calc(var(--left-border) + 15px);
 }
 input[type=range].range-styled {
     -webkit-appearance: none;
     outline: 0;
-    width: 520px;
+    width: 400px;
     transition: 0.2s;
     background-color: rgba(255,255,255,0.01);
 }

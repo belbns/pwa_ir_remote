@@ -319,6 +319,12 @@ var gaugepi = new Gauge(document.getElementById("gaugepi"));
 var gaugeya = new Gauge(document.getElementById("gaugeya"));
 var gaugeth = new Gauge(document.getElementById("gaugeth"));
 
+var win_height = window.screen.availHeight;
+var win_width = window.screen.availWidth;
+
+writeToScreen('height: ' + win_height + '   width: ' + win_width);
+
+
 function gaugeUpdate() {
     gaugepi.value(setPitch / maxPitch);
     gaugeya.value(setYaw / maxYaw);

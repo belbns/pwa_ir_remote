@@ -27,21 +27,21 @@
     -->
         <div id="butt_block" style="display: flex; justify-content: space-between;">
         
-            <div style="padding-top: 15px; padding-left: 10px">
+            <div style="padding-top: 5px; padding-left: 5px">
                 <input id="togglesw" type="checkbox" onchange="crtrl_on(this)"/>
                 <label id="labelsw" for="togglesw">
                     <span id="switch"></span>
                 </label>
             </div>
             
-            <div style="padding-top: 46px;">
+            <div style="padding-top: 3px;">
                 <meter id="battery" name="battery"
                     min="0" max="9.5"
                     low="5" high="8" optimum="9"
                     step= "0.1" value="9">
             </div>
             
-            <div style="padding-top: 15px; padding-right: 10px;">           
+            <div style="padding-top: 5px; padding-right: 5px;">           
                 <select id="soflow-color" onchange="copterChange(this.value)">
                     <option>Syma S107G</option>
                     <option>Syma S026G</option>
@@ -97,7 +97,6 @@
             </div>
         </div>
 
-        <!-- <div class="slider-wrapper" style="position:absolute; top:520px; left: 50px;"> -->
         <div class="slider-wrapper">
             <input type="range" class="range-styled" min="0" max="127" value="0" step="1"
                 id="throttle" oninput="throttleInput(this.value)">
@@ -105,7 +104,7 @@
 
         <div id="pitchyaw" class="zone dynamic active"></div>
 
-        <div id = "diagmsg" style="position:absolute; top: 720px; height: 60px; width: 500px;"></div>
+        <div id = "diagmsg" style="position:absolute; top: 500px; left: 200px; height: 40px; width: 500px;"></div>
 
         <script type="text/javascript" src="js/nipplejs.js"></script>
         <script type="text/javascript" src="js/main.js"></script>
