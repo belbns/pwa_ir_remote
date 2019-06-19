@@ -7,27 +7,24 @@ html, body {
     bottom: 0;
     padding: 0;
     margin: 0;
-    //min-width: 720px;
-    //max-width: 1024px;
-    //width: auto;
+    min-width: 1280px;
+    /*max-width: 1024px;*/
+    width: auto;
 
 
-    height: 100vh;
-    width: 100vw;
-    //font-family: Varela, Helvetica, Arial, sans-serif;
-    //font-size: 16px;
-    //font-weight: normal;
-    //letter-spacing: normal;
-    //line-height: 32px;
-
+    /*height: 100vh;
+    height: 600px;
+    width: 1024px;
+*/ 
 }
 
 body {
-    background: skyblue;
+    background-color: skyblue;
+    background-size: auto auto;
     background-image : url('../img/cockpit1024x540.jpg');
 /*    background-image : url('../img/ch47f.png'); */
     background-repeat: no-repeat;
-    //background-attachment: fixed;
+    /*background-attachment: fixed;*/
     background-position: center top;
 }
 
@@ -44,24 +41,9 @@ body {
 #butt_block {
     background: rgba(255, 255, 255, 0.1);
     width: 84vw;
-    height: 100px;
+    height: 60px;
     margin: auto;
 }
-
-
-#term_block {
-    background: LightBlue;
-    width: 100%;
-    height: 500px;
-    border: 5px;
-    border-radius: 25px;
-}
-.myterm {
-    font-family:    Arial, Helvetica, sans-serif;
-    font-size:      32px;
-    font-weight:    bold;
-}
-
 
 /* -------------------- Select Box Styles: stackoverflow.com Method */
 /* -------------------- Source: http://stackoverflow.com/a/5809186 */
@@ -144,11 +126,6 @@ select#soflow-color {
     width: 220px;
     height: 20px;
     margin-left: 92px;
-}
-
-#btcont {
-    width: 60px;
-    height: 400px;
 }
 
 .gauge {
@@ -275,31 +252,22 @@ select#soflow-color {
     transform: rotate(-.50turn);
 }
 
-#tmsg {
-    position: absolute;
-    top: 500px;
-    left: 200px;
-    color: navy;
-}
 #gaugeth {
     position: absolute;
     top: 320px;
-    left: calc(var(--left-border) + 276px);
-/*    left: 276px; */
+    left: calc(var(--left-border) + 309px);
     color: yellow;
 }
 #gaugepi {
     position: absolute;
     top: 320px;
-    left: calc(var(--left-border) + 461px);
-/*    left: 461px; */
+    left: calc(var(--left-border) + 494px);
     color: yellow;
 }
 #gaugeya {
     position: absolute;
     top: 320px;
-    left: calc(var(--left-border) + 647px);
-/*    left: 647px; */
+    left: calc(var(--left-border) + 680px);
     color: yellow;
 }
 
@@ -310,13 +278,13 @@ select#soflow-color {
     color: yellow;
 }
 #lthrottle {
-    left: calc(var(--left-border) + 296px);
+    left: calc(var(--left-border) + 329px);
 }
 #lpitch {
-    left: calc(var(--left-border) + 484px);
+    left: calc(var(--left-border) + 517px);
 }
 #lyaw {
-    left: calc(var(--left-border) + 666px);
+    left: calc(var(--left-border) + 699px);
 }
 
 /* slider - Throttle 
@@ -329,8 +297,8 @@ select#soflow-color {
   margin: 0;
   transform-origin: 75px 75px;
   transform: rotate(-90deg);
-  top: 370px; 
-  left: calc(var(--left-border) + 15px);
+  top: 350px; 
+  left: calc(var(--left-border) + 35px);
 }
 input[type=range].range-styled {
     -webkit-appearance: none;
@@ -368,7 +336,7 @@ input[type=range].range-styled::-webkit-slider-thumb:active {
   display: none;
   position: absolute;
   width: 40%;
-  height: 100%;
+  height: 500px;
   right: 0;
 }
 .zone.active {

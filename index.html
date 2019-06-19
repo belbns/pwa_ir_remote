@@ -9,14 +9,19 @@
         <meta name="description"
           content="Progressive Web Application for serial communication with toy mobile device">
 
-        <title>Tim remote</title>
+        <title>PWA IR remote</title>
 
-        <link rel="manifest" href="manifest.json">
+
         <link rel="apple-touch-icon" sizes="180x180" href="icons/apple-touch-icon.png">
         <link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32x32.png">
         <link rel="icon" type="image/png" sizes="16x16" href="icons/favicon-16x16.png">
-        <link rel="mask-icon" href="icons/safari-pinned-tab.svg" color="#2196f3">
+        <link rel="manifest" href="manifest.json">
+        <link rel="mask-icon" href="icons/safari-pinned-tab.svg" color="#5bbad5">
         <link rel="shortcut icon" href="icons/favicon.ico">
+        <meta name="msapplication-TileColor" content="#da532c">
+        <meta name="msapplication-config" content="icons/browserconfig.xml">
+        <meta name="theme-color" content="#ffffff">
+
         <link rel="stylesheet" type="text/css" href="css/index.css">
     </head>
     <body>
@@ -104,7 +109,7 @@
 
         <div id="pitchyaw" class="zone dynamic active"></div>
 
-        <div id = "diagmsg" style="position:absolute; top: 500px; left: 200px; 
+        <div id = "diagmsg" style="position:absolute; top: 522px; left: 175px; 
             height: 40px; width: 500px; color: red"></div>
 
         <script type="text/javascript" src="js/nipplejs.js"></script>

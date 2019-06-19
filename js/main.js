@@ -322,6 +322,10 @@ var gaugeth = new Gauge(document.getElementById("gaugeth"));
 var win_height = window.screen.availHeight;
 var win_width = window.screen.availWidth;
 
+//document.body.style.width = win_width;
+//document.body.style.height = 600 + 'px';
+//document.html.style.height = 600 + 'px';
+
 writeToScreen('height: ' + win_height + '   width: ' + win_width);
 
 
