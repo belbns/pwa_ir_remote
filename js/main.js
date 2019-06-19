@@ -46,6 +46,9 @@ var HighLoad = false;
 
 const adcBattMin = 1580;
 const battMeterMax = 120;
+
+
+
 /*
 var storage = window.localStorage;
 
@@ -361,6 +364,11 @@ function copterChange(value) {
     document.getElementById('throttle').value = setThrottle;
     gaugeUpdate();
     sendToBLE(copterType);
+
+/*
+    getComputedStyle(document.documentElement).getPropertyValue('--my-variable-name');
+    document.documentElement.style.setProperty('--my-variable-name', 'pink');
+*/
 }
 
 
@@ -428,16 +436,14 @@ function handleCharacteristicValueChanged(event) {
 function crtrl_on(sw) {
     if (sw.checked) {
         // connect to BLE
-        connect();
-        //jPosDraw(ctrlStepp[0]);
-        //jPosDraw(ctrlStepp[1]);
-        //jPosMotDraw(ctrlMotors);
-        //jPosDrawServo(ctrlServo);
+        //connect();
         ctrlFlag = true;
+        writeToScreen("switch on");
     }
     else {
-        disconnect();
+        //disconnect();
         ctrlFlag = false;
+        writeToScreen("switch off");
     }
 }
 
@@ -458,13 +464,17 @@ function writeToCharacteristic(characteristic, data) {
 
 const scrLen = 10;
 function writeToScreen(message) {
-    var outputEl = document.getElementById('diagmsg');
+    //var outputEl = document.getElementById('diagmsg');
+    /*
     if (outputEl.children.length == scrLen) {
         outputEl.removeChild(outputEl.children[0]);
     }
     
     outputEl.insertAdjacentHTML('beforeend',
       '<div class="myterm">' + message + '</div>');
+      */
+    //outputEl.innerHTML = message;
+    document.getElementById("diagmsg").innerHTML = message;
 }
 
 function cleanScreen() {

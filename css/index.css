@@ -1,19 +1,19 @@
 
 html, body {
-    //position: absolute;
-    //top: 0;
-    //left: 0;
-    //right: 0;
-    //bottom: 0;
-    //padding: 0;
-    //margin: 0;
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    padding: 0;
+    margin: 0;
     //min-width: 720px;
     //max-width: 1024px;
     //width: auto;
 
 
-    height: 720px; //100vh;
-    width: 1024px;
+    height: 100vh;
+    width: 100vw;
     //font-family: Varela, Helvetica, Arial, sans-serif;
     //font-size: 16px;
     //font-weight: normal;
@@ -23,10 +23,17 @@ html, body {
 }
 
 body {
+    background: skyblue;
     background-image : url('../img/cockpit1024.jpg');
+/*    background-image : url('../img/ch47f.png'); */
     background-repeat: no-repeat;
+    //background-attachment: fixed;
+    background-position: center top;
 }
 
+:root {
+  --left-border: calc((100vw - 1024px) / 2);
+}
 
 
 #head2 {
@@ -35,11 +42,10 @@ body {
 }
 
 #butt_block {
-    //background: Bisque;
     background: rgba(255, 255, 255, 0.1);
-    width: 100%;
+    width: 84vw;
     height: 100px;
-    //padding-top: 10px;
+    margin: auto;
 }
 
 
@@ -278,19 +284,22 @@ select#soflow-color {
 #gaugeth {
     position: absolute;
     top: 416px;
-    left: 276px;
+    left: calc(var(--left-border) + 276px);
+/*    left: 276px; */
     color: yellow;
 }
 #gaugepi {
     position: absolute;
     top: 416px;
-    left: 461px;
+    left: calc(var(--left-border) + 461px);
+/*    left: 461px; */
     color: yellow;
 }
 #gaugeya {
     position: absolute;
     top: 416px;
-    left: 647px;
+    left: calc(var(--left-border) + 647px);
+/*    left: 647px; */
     color: yellow;
 }
 
@@ -301,24 +310,27 @@ select#soflow-color {
     color: yellow;
 }
 #lthrottle {
-    left: 296px;
+    left: calc(var(--left-border) + 296px);
 }
 #lpitch {
-    left: 484px;;
+    left: calc(var(--left-border) + 484px);
 }
 #lyaw {
-    left: 666px;
+    left: calc(var(--left-border) + 666px);
 }
 
 /* slider - Throttle 
   https://code.i-harness.com/ru/docs/html/element/input/range
 */
 .slider-wrapper input {
+  position:absolute; 
   width: 520px;
   height: 72px;
   margin: 0;
   transform-origin: 75px 75px;
   transform: rotate(-90deg);
+  top: 520px; 
+  left: calc(var(--left-border) + 15px);
 }
 input[type=range].range-styled {
     -webkit-appearance: none;
@@ -346,9 +358,9 @@ input[type=range].range-styled::-webkit-slider-thumb {
     border-color: royalblue;
 }
 input[type=range].range-styled::-webkit-slider-thumb:active {
-    height: 56px;
+    height: 72px;
     width: 46px;
-    margin-top: -26px;
+    margin-top: -34px;
 }
 
 /* joystick zone */
