@@ -54,7 +54,13 @@
             </div>
         </div>
 
+        <div id="label-container" style="display: flex; justify-content: space-between;">
+
         <div class="glabel" id="lthrottle">Throttle: 0</div>
+        <div class="glabel" id="lpitch">Pitch: 0</div>
+        <div class="glabel" id="lyaw">Yaw: 0</div>
+        </div>
+        <div id="control-container" style="display: flex; justify-content: space-between;">
         <div class="gauge gauge__liveupdate" id="gaugeth">
             <div class="gauge--container" id="gauge-container">
                 <div class="gauge--marker"></div>
@@ -70,7 +76,6 @@
             </div>
         </div>
 
-        <div class="glabel" id="lpitch">Pitch: 0</div>
         <div class="gauge gauge__liveupdate" id="gaugepi">
             <div class="gauge--container" id="gauge-container">
                 <div class="gauge--marker"></div>
@@ -86,7 +91,6 @@
             </div>
         </div>
 
-        <div class="glabel" id="lyaw">Yaw: 0</div>
         <div class="gauge gauge__liveupdate" id="gaugeya">
             <div class="gauge--container" id="gauge-container">
                 <div class="gauge--marker"></div>
@@ -102,6 +106,7 @@
             </div>
         </div>
 
+        </div>
         <div class="slider-wrapper">
             <input type="range" class="range-styled" min="0" max="127" value="0" step="1"
                 id="throttle" oninput="throttleInput(this.value)">

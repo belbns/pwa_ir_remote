@@ -46,6 +46,7 @@ body {
     margin: auto;
 }
 
+
 /* -------------------- Select Box Styles: stackoverflow.com Method */
 /* -------------------- Source: http://stackoverflow.com/a/5809186 */
 select#soflow, select#soflow-color {
@@ -129,14 +130,37 @@ select#soflow-color {
     margin-left: 92px;
 }
 
+
+#control-container {
+    position: absolute;
+    top: 460px;
+    left: calc(50vw - 20vw);
+    background: midnightblue;
+    width: 40vw;
+    height: 80px;
+    margin: auto;
+    border-radius: 10px;
+}
+
+#label-container {
+    position: absolute;
+    top: 440px;
+    left: calc(50vw - 20vw);
+    background: midnightblue;
+    width: 40vw;
+    height: 20px;
+    margin: auto;
+    border-radius: 10px;
+}
+
 .gauge {
     position: relative;
 }
 .gauge--container {
     margin: 0;
-    padding: 0;
+    padding: 0;    
     position: absolute;
-    left: 50%;
+    left: 50%; 
     overflow: hidden;
     text-align: center;
     -webkit-transform: translateX(-50%);
@@ -254,46 +278,58 @@ select#soflow-color {
 }
 
 #gaugeth {
+    /*
     position: absolute;
-    top: 320px;
+    top: 320px; */
+    top: 5px;
+    left: 20px;
 /*    left: calc(var(--left-border) + 309px); */
-    left: calc(50vw - 202px);
+    /* left: calc(50vw - 202px); */
     color: yellow;
 }
 #gaugepi {
+    /*
     position: absolute;
-    top: 320px;
+    top: 320px; */
+    top: 5px;
+
 /*    left: calc(var(--left-border) + 494px); */
-    left: calc(50vw - 18px);
+    /* left: calc(50vw - 18px); */
     color: yellow;
 }
 #gaugeya {
+    /*
     position: absolute;
-    top: 320px;
+    top: 320px; */
+    top: 5px;
+    right: 20px;
 /*    left: calc(var(--left-border) + 680px); */
-    left: calc(50vw + 168px);
+    /* left: calc(50vw + 168px); */
     color: yellow;
 }
 
 
 .glabel {
+    /*
     position: absolute;
     top: 300px;
+    */
+    top: 2px;
     color: yellow;
 }
 #lthrottle {
 /*    left: calc(var(--left-border) + 329px);
     left: calc(50vw - 215px); */
-    left: calc(50vw - 188px);
+    padding-left: 30px;
 }
 #lpitch {
 /*    left: calc(var(--left-border) + 517px); */
-    left: 50vw;
+    /* left: 20vw; */
 
 }
 #lyaw {
 /*    left: calc(var(--left-border) + 699px); */
-    left: calc(50vw + 188px);
+    padding-right: 50px;
 }
 
 /* slider - Throttle 
