@@ -7,9 +7,9 @@ html, body {
     bottom: 0;
     padding: 0;
     margin: 0;
-    min-width: 1280px;
+    /*min-width: 1280px;*/
     /*max-width: 1024px;*/
-    width: auto;
+    /*width: auto;*/
 
 
     /*height: 100vh;
@@ -30,6 +30,7 @@ body {
 
 :root {
   --left-border: calc((100vw - 1024px) / 2);
+  --half-width: calc(10vw / 2);
 }
 
 
@@ -255,19 +256,22 @@ select#soflow-color {
 #gaugeth {
     position: absolute;
     top: 320px;
-    left: calc(var(--left-border) + 309px);
+/*    left: calc(var(--left-border) + 309px); */
+    left: calc(50vw - 19.4vw);
     color: yellow;
 }
 #gaugepi {
     position: absolute;
     top: 320px;
-    left: calc(var(--left-border) + 494px);
+/*    left: calc(var(--left-border) + 494px); */
+    left: calc(50vw - 4.2vw);
     color: yellow;
 }
 #gaugeya {
     position: absolute;
     top: 320px;
-    left: calc(var(--left-border) + 680px);
+/*    left: calc(var(--left-border) + 680px); */
+    left: calc(50vw + 11.2vw);
     color: yellow;
 }
 
@@ -278,13 +282,18 @@ select#soflow-color {
     color: yellow;
 }
 #lthrottle {
-    left: calc(var(--left-border) + 329px);
+/*    left: calc(var(--left-border) + 329px);
+    left: calc(50vw - 215px); */
+    left: calc(50vw - 18vw);
 }
 #lpitch {
-    left: calc(var(--left-border) + 517px);
+/*    left: calc(var(--left-border) + 517px); */
+    left: calc(50vw - 2.2vw);
+
 }
 #lyaw {
-    left: calc(var(--left-border) + 699px);
+/*    left: calc(var(--left-border) + 699px); */
+    left: calc(50vw + 13.2vw);
 }
 
 /* slider - Throttle 
@@ -298,7 +307,8 @@ select#soflow-color {
   transform-origin: 75px 75px;
   transform: rotate(-90deg);
   top: 350px; 
-  left: calc(var(--left-border) + 35px);
+/*  left: calc(var(--left-border) + 35px); */
+        left: calc(50vw - 40vw);
 }
 input[type=range].range-styled {
     -webkit-appearance: none;
