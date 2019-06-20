@@ -330,9 +330,10 @@ var ctrlCont = document.getElementById('control-container');
 var wh = document.documentElement.getBoundingClientRect().height; //ctrlCont.style.height;
 var ww = document.documentElement.getBoundingClientRect().width;
 var ch = ctrlCont.getBoundingClientRect().height;
+var dpi = window.devicePixelRatio;
 ctrlCont.style.top = (wh - ch) + 'px';  //91
 
-writeToScreen('height: ' + wh + '   width: ' + ww + '  ch: ' + ch);
+writeToScreen('height: ' + wh + '   width: ' + ww + '  ch: ' + ch + '  dpi: ' + dpi);
 
 function gaugeUpdate() {
     gaugepi.value(setPitch / maxPitch);

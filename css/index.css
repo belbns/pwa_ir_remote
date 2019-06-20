@@ -7,6 +7,7 @@ html, body {
     bottom: 0;
     padding: 0;
     margin: 0;
+    font-size: 100%;
     /*min-width: 1280px;*/
     /*max-width: 1024px;*/
     /*height: 100vh;
@@ -36,9 +37,9 @@ body {
 */
 
 #butt_block {
-    background: rgba(255, 255, 255, 0.1);
+    background: rgba(255, 255, 255, 0.5);
     width: 90vw;
-    height: 50px;
+    height: 3rem;
     margin: auto;
 }
 
@@ -47,33 +48,31 @@ body {
 /* -------------------- Source: http://stackoverflow.com/a/5809186 */
 select#soflow, select#soflow-color {
    -webkit-appearance: button;
-   -webkit-border-radius: 2px;
-   -webkit-box-shadow: 0px 1px 3px rgba(0, 0, 0, 0.1);
-   -webkit-padding-end: 20px;
-   -webkit-padding-start: 2px;
+   -webkit-border-radius: 0.125rem;
+   -webkit-box-shadow: 0px 0.2rem 0.2rem rgba(0, 0, 0, 0.1);
+   -webkit-padding-end: 2rem;
+   -webkit-padding-start: 0.125rem;
    -webkit-user-select: none;
    background-image: url("../icons/15xvbd5.png"), -webkit-linear-gradient(#FAFAFA, #F4F4F4 40%, #E5E5E5);
    background-position: 97% center;
    background-repeat: no-repeat;
-   border: 1px solid #AAA;
+   border: 0.1rem solid #AAA;
    color: #555;
-   font-size: 24px;
-   //margin: 20px;
+   font-size: 1.5rem;
    overflow: hidden;
-   //padding: 5px 10px;
    text-overflow: ellipsis;
    white-space: nowrap;
-   height: 40px;
-   width: 180px;
+   height: 2.4rem;
+   width: 12rem;
 }
 select#soflow-color {
    color: #fff;
    background-image: url("../icons/15xvbd5.png"), -webkit-linear-gradient(#779126, #779126 40%, #779126);
    background-color: #779126;
-   -webkit-border-radius: 20px;
-   -moz-border-radius: 20px;
-   border-radius: 20px;
-   padding-left: 15px;
+   -webkit-border-radius: 1rem;
+   -moz-border-radius: 1rem;
+   border-radius: 1rem;
+   padding-left: 0.5rem;
 }
 
 /* ---- toggle switch */
@@ -85,9 +84,9 @@ select#soflow-color {
 #labelsw {
   display: inline-block;
   background: #2c3e50;
-  width: 110px;
-  height: 46px;
-  border-radius: 18px;
+  width: 6rem;
+  height: 2.25rem;
+  border-radius: 1.1rem;
   position: relative;
   cursor: pointer;
   background: rgba(255,255,255,0.5);
@@ -95,13 +94,13 @@ select#soflow-color {
 
 #switch {
   position: absolute;
-  width: 40px;
-  height: 40px;
-  margin-top: 3px;
-  margin-left: 3px;
+  width: 2rem;
+  height: 2rem;
+  margin-top: 0.15rem;
+  margin-left: 0.15rem;
   border-radius: 15px;
   background: #c0392b;
-  box-shadow: 5px 0px 28px -9px rgba(0, 0, 0, 0.75);
+  box-shadow: 0.4rem 0rem 1.8rem -0.5rem rgba(0, 0, 0, 0.75);
   transition: transform 0.2s ease-in;
 }
 
@@ -114,19 +113,17 @@ select#soflow-color {
 #togglesw:empty {
     display: none;
 }
-
+/*
 #dist_block {
     padding-top: 5px;
 }
+*/
 
 #battery {
     transform: rotate(180deg);
-    width: 220px;
-    height: 20px;
+    width: 14rem;
+    height: 1.2rem;
     margin-left: 92px;
-    border: 3px solid #666699;
-
-    border-radius: 2px;
 }
 
 
@@ -135,8 +132,8 @@ select#soflow-color {
     top: 230px;
     left: calc(50% - 300px);
     background: linear-gradient(to bottom, #003300 0%, #669999 100%);
-    width: 520px;
-    height: 85px;
+    width: 33rem;
+    height: 5.3rem;
     margin: auto;
 }
 
