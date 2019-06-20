@@ -9,11 +9,7 @@ html, body {
     margin: 0;
     /*min-width: 1280px;*/
     /*max-width: 1024px;*/
-    height: auto;
-    width: 1280px;
     /*height: 100vh;
-    height: 600px;
-    width: 1024px;
 */ 
 }
 
@@ -345,9 +341,11 @@ select#soflow-color {
   margin: 0;
   transform-origin: 75px 75px;
   transform: rotate(-90deg);
-  top: 350px; 
-/*  left: calc(var(--left-border) + 35px); */
-    left: calc(50vw - 465px);
+  /* top: 350px; 
+    left: calc(var(--left-border) + 35px);
+    left: calc(50vw - 465px);   */
+    top: 75%;
+    left: 5%;
 }
 input[type=range].range-styled {
     -webkit-appearance: none;

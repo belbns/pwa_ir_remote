@@ -327,10 +327,12 @@ var win_height = window.screen.availHeight;
 //document.body.style.height = 600 + 'px';
 //document.html.style.height = 600 + 'px';
 var ctrlCont = document.getElementById('control-container');
-//var ctrlHeight = ctrlCont.style.height;
-ctrlCont.style.top = (win_height - 286) + 'px';
+var wh = document.documentElement.getBoundingClientRect().height; //ctrlCont.style.height;
+var ww = document.documentElement.getBoundingClientRect().width;
+var ch = ctrlCont.getBoundingClientRect().height;
+ctrlCont.style.top = (wh - ch) + 'px';  //91
 
-writeToScreen('height: ' + win_height + '   width: ' + win_width);
+writeToScreen('height: ' + wh + '   width: ' + ww + '  ch: ' + ch);
 
 function gaugeUpdate() {
     gaugepi.value(setPitch / maxPitch);
