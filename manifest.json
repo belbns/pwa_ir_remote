@@ -2,7 +2,7 @@
     "name": "BLE Helicopter Remote",
     "short_name": "BLE_IR_Remote",
     "lang": "en",
-    "display": "standalone",
+    "display": "fullscreen",
     "orientation": "landscape",
     "start_url": "./",
     "scope": "./",

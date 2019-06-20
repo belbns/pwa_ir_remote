@@ -327,7 +327,7 @@ var win_width = window.screen.availWidth;
 //document.html.style.height = 600 + 'px';
 
 //writeToScreen('height: ' + win_height + '   width: ' + win_width);
-
+forceScreenSize(480, 640);
 
 function gaugeUpdate() {
     gaugepi.value(setPitch / maxPitch);
