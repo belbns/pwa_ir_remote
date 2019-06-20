@@ -310,7 +310,7 @@ select#soflow-color {
   margin: 0;
   transform-origin: 75px 75px;
   transform: rotate(-90deg);
-  top: 250px;
+  top: 60px;
   left: 10px;
 }
 input[type=range].range-styled {
