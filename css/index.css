@@ -344,7 +344,7 @@ select#soflow-color {
   /* top: 350px; 
     left: calc(var(--left-border) + 35px);
     left: calc(50vw - 465px);   */
-    top: 70vh;
+    top: 60vh;
     left: 3vw;
 }
 input[type=range].range-styled {
