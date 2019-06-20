@@ -326,7 +326,7 @@ var win_width = window.screen.availWidth;
 //document.body.style.height = 600 + 'px';
 //document.html.style.height = 600 + 'px';
 
-writeToScreen('height: ' + win_height + '   width: ' + win_width);
+//writeToScreen('height: ' + win_height + '   width: ' + win_width);
 
 
 function gaugeUpdate() {

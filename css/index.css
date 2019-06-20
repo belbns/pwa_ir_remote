@@ -7,11 +7,10 @@ html, body {
     bottom: 0;
     padding: 0;
     margin: 0;
-    min-width: 1280px;
+    /*min-width: 1280px;*/
     /*max-width: 1024px;*/
+    height: 700px;
     width: auto;
-
-
     /*height: 100vh;
     height: 600px;
     width: 1024px;
@@ -20,7 +19,7 @@ html, body {
 
 body {
     background-color: skyblue;
-    background-size: auto auto;
+    background-size: cover;
     background-image : url('../img/cockpit1024x540.jpg');
 /*    background-image : url('../img/ch47f.png'); */
     background-repeat: no-repeat;
@@ -133,15 +132,17 @@ select#soflow-color {
 
 #control-container {
     position: absolute;
-    top: 460px;
-    left: calc(50vw - 20vw);
-    background: midnightblue;
-    width: 40vw;
-    height: 80px;
+    top: 449px;
+    left: calc(50% - 300px);
+    /*background: midnightblue;*/
+    background: linear-gradient(to bottom, #003300 0%, #669999 100%);
+    width: 600px;
+    height: 85px;
     margin: auto;
+    border: 3px solid #666699;
     border-radius: 10px;
 }
-
+/*
 #label-container {
     position: absolute;
     top: 440px;
@@ -152,7 +153,7 @@ select#soflow-color {
     margin: auto;
     border-radius: 10px;
 }
-
+*/
 .gauge {
     position: relative;
 }
@@ -281,31 +282,31 @@ select#soflow-color {
     /*
     position: absolute;
     top: 320px; */
-    top: 5px;
-    left: 20px;
+    top: 10px;
+    /*left: 20px;*/
 /*    left: calc(var(--left-border) + 309px); */
     /* left: calc(50vw - 202px); */
-    color: yellow;
+    color: #000066;
 }
 #gaugepi {
     /*
     position: absolute;
     top: 320px; */
-    top: 5px;
+    top: 10px;
 
 /*    left: calc(var(--left-border) + 494px); */
     /* left: calc(50vw - 18px); */
-    color: yellow;
+    color: #000066;
 }
 #gaugeya {
     /*
     position: absolute;
     top: 320px; */
-    top: 5px;
-    right: 20px;
+    top: 10px;
+    /*right: 20px;*/
 /*    left: calc(var(--left-border) + 680px); */
     /* left: calc(50vw + 168px); */
-    color: yellow;
+    color: #000066;
 }
 
 
@@ -314,13 +315,15 @@ select#soflow-color {
     position: absolute;
     top: 300px;
     */
+    font-size: 20px;
+    width: 20px;
     top: 2px;
-    color: yellow;
+    color: #ff9900;
 }
 #lthrottle {
 /*    left: calc(var(--left-border) + 329px);
     left: calc(50vw - 215px); */
-    padding-left: 30px;
+    /*padding-left: 30px;*/
 }
 #lpitch {
 /*    left: calc(var(--left-border) + 517px); */
@@ -329,7 +332,7 @@ select#soflow-color {
 }
 #lyaw {
 /*    left: calc(var(--left-border) + 699px); */
-    padding-right: 50px;
+    /*padding-right: 50px;*/
 }
 
 /* slider - Throttle 
