@@ -22,7 +22,7 @@ body {
     /*background-attachment: fixed;*/
     background-position: center top;
 }
-
+/*
 :root {
   --left-border: calc((100vw - 1024px) / 2);
   --half-width: calc(10vw / 2);
@@ -33,11 +33,12 @@ body {
     height: 50px;
     float: center;
 }
+*/
 
 #butt_block {
     background: rgba(255, 255, 255, 0.1);
-    width: 84vw;
-    height: 60px;
+    width: 90vw;
+    height: 50px;
     margin: auto;
 }
 
@@ -62,8 +63,8 @@ select#soflow, select#soflow-color {
    //padding: 5px 10px;
    text-overflow: ellipsis;
    white-space: nowrap;
-   height: 50px;
-   width: 200px;
+   height: 40px;
+   width: 180px;
 }
 select#soflow-color {
    color: #fff;
@@ -85,7 +86,7 @@ select#soflow-color {
   display: inline-block;
   background: #2c3e50;
   width: 110px;
-  height: 52px;
+  height: 46px;
   border-radius: 18px;
   position: relative;
   cursor: pointer;
@@ -94,8 +95,8 @@ select#soflow-color {
 
 #switch {
   position: absolute;
-  width: 46px;
-  height: 46px;
+  width: 40px;
+  height: 40px;
   margin-top: 3px;
   margin-left: 3px;
   border-radius: 15px;
@@ -123,33 +124,23 @@ select#soflow-color {
     width: 220px;
     height: 20px;
     margin-left: 92px;
+    border: 3px solid #666699;
+
+    border-radius: 2px;
 }
 
 
 #control-container {
     position: absolute;
-    top: 449px;
+    top: 230px;
     left: calc(50% - 300px);
-    /*background: midnightblue;*/
     background: linear-gradient(to bottom, #003300 0%, #669999 100%);
-    width: 600px;
+    width: 520px;
     height: 85px;
     margin: auto;
-    border: 3px solid #666699;
-    border-radius: 10px;
 }
-/*
-#label-container {
-    position: absolute;
-    top: 440px;
-    left: calc(50vw - 20vw);
-    background: midnightblue;
-    width: 40vw;
-    height: 20px;
-    margin: auto;
-    border-radius: 10px;
-}
-*/
+
+
 .gauge {
     position: relative;
 }
@@ -275,43 +266,21 @@ select#soflow-color {
 }
 
 #gaugeth {
-    /*
-    position: absolute;
-    top: 320px; */
     top: 10px;
-    /*left: 20px;*/
-/*    left: calc(var(--left-border) + 309px); */
-    /* left: calc(50vw - 202px); */
     color: #000066;
 }
 #gaugepi {
-    /*
-    position: absolute;
-    top: 320px; */
     top: 10px;
-
-/*    left: calc(var(--left-border) + 494px); */
-    /* left: calc(50vw - 18px); */
     color: #000066;
 }
 #gaugeya {
-    /*
-    position: absolute;
-    top: 320px; */
     top: 10px;
-    /*right: 20px;*/
-/*    left: calc(var(--left-border) + 680px); */
-    /* left: calc(50vw + 168px); */
     color: #000066;
 }
 
 
 .glabel {
-    /*
-    position: absolute;
-    top: 300px;
-    */
-    font-size: 20px;
+    font-size: 18px;
     width: 20px;
     top: 2px;
     color: #ff9900;
@@ -336,16 +305,13 @@ select#soflow-color {
 */
 .slider-wrapper input {
   position:absolute; 
-  width: 60vh;
+  width: 260px;
   height: 72px;
   margin: 0;
   transform-origin: 75px 75px;
   transform: rotate(-90deg);
-  /* top: 350px; 
-    left: calc(var(--left-border) + 35px);
-    left: calc(50vw - 465px);   */
-    top: 60vh;
-    left: 3vw;
+  top: 320px;
+  left: 10px;
 }
 input[type=range].range-styled {
     -webkit-appearance: none;
