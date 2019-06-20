@@ -336,7 +336,7 @@ select#soflow-color {
 */
 .slider-wrapper input {
   position:absolute; 
-  width: 400px;
+  width: 80vh;
   height: 72px;
   margin: 0;
   transform-origin: 75px 75px;
@@ -344,13 +344,13 @@ select#soflow-color {
   /* top: 350px; 
     left: calc(var(--left-border) + 35px);
     left: calc(50vw - 465px);   */
-    top: 75%;
-    left: 5%;
+    top: 75vh;
+    left: 3vw;
 }
 input[type=range].range-styled {
     -webkit-appearance: none;
     outline: 0;
-    width: 400px;
+    width: 80vh;
     transition: 0.2s;
     background-color: rgba(255,255,255,0.01);
 }
