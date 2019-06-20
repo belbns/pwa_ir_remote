@@ -319,15 +319,18 @@ var gaugepi = new Gauge(document.getElementById("gaugepi"));
 var gaugeya = new Gauge(document.getElementById("gaugeya"));
 var gaugeth = new Gauge(document.getElementById("gaugeth"));
 
-var win_height = window.screen.availHeight;
 var win_width = window.screen.availWidth;
+document.body.style.width = win_width;
+var win_height = window.screen.availHeight;
 
-//document.body.style.width = win_width;
+
 //document.body.style.height = 600 + 'px';
 //document.html.style.height = 600 + 'px';
+var ctrlCont = document.getElementById('control-container');
+//var ctrlHeight = ctrlCont.style.height;
+ctrlCont.style.top = (win_height - 286) + 'px';
 
-//writeToScreen('height: ' + win_height + '   width: ' + win_width);
-forceScreenSize(480, 640);
+writeToScreen('height: ' + win_height + '   width: ' + win_width);
 
 function gaugeUpdate() {
     gaugepi.value(setPitch / maxPitch);
