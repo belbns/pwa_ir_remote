@@ -66,7 +66,7 @@ body {
 #butt_block {
     background: rgba(255, 255, 255, 0.5);
     width: 90vw;
-    height: 3rem;
+    height: 4rem;
     margin: auto;
 }
 
@@ -156,7 +156,7 @@ select#soflow-color {
 
 #control-container {
     position: absolute;
-    top: 16rem;
+    top: 15.5rem;
     left: calc(50% - 18.75rem);
     background: linear-gradient(to bottom, #003300 0%, #669999 100%);
     width: 33rem;
@@ -326,12 +326,12 @@ select#soflow-color {
 */
 .slider-wrapper input {
   position:absolute; 
-  width: 19rem;
+  width: 18rem;
   height: 6rem;
   margin: 0;
-  transform-origin: 75px 75px;
+  transform-origin: 5rem 5rem;
   transform: rotate(-90deg);
-  top: 20rem;
+  top: 19rem;
   left: 1rem;
 }
 input[type=range].range-styled {
