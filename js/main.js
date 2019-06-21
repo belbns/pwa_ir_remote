@@ -326,6 +326,7 @@ var win_height = window.screen.availHeight;
 
 //document.body.style.height = 600 + 'px';
 //document.html.style.height = 600 + 'px';
+/*
 var ctrlCont = document.getElementById('control-container');
 var wh = document.documentElement.getBoundingClientRect().height; //ctrlCont.style.height;
 var ww = document.documentElement.getBoundingClientRect().width;
@@ -334,7 +335,7 @@ var dpi = window.devicePixelRatio;
 ctrlCont.style.top = (wh - ch) + 'px';  //91
 
 writeToScreen('height: ' + wh + '   width: ' + ww + '  ch: ' + ch + '  dpi: ' + dpi);
-
+*/
 function gaugeUpdate() {
     gaugepi.value(setPitch / maxPitch);
     gaugeya.value(setYaw / maxYaw);
@@ -346,7 +347,7 @@ function gaugeUpdate() {
 };
 
 function copterChange(value) {
-    if (value === 'Syma S107G') {
+    if ((value === 'Syma S111G') || (value === 'Syma S107G')) {
         if (copterType != copter107) {
             copterType = copter107;
             maxYaw = maxYaw107;
