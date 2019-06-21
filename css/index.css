@@ -326,8 +326,8 @@ select#soflow-color {
 */
 .slider-wrapper input {
   position:absolute; 
-  width: 14rem;
-  height: 6rem;
+  width: 15rem;
+  height: 5rem;
   margin: 0;
   transform-origin: 5rem 5rem;
   transform: rotate(-90deg);
@@ -337,7 +337,7 @@ select#soflow-color {
 input[type=range].range-styled {
     -webkit-appearance: none;
     outline: 0;
-    width: 14.5rem;
+    width: 15.5rem;
     transition: 0.2s;
     background-color: rgba(255,255,255,0.01);
 }
