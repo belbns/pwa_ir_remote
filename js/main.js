@@ -348,6 +348,12 @@ function gaugeUpdate() {
 
 function copterChange(value) {
     if ((value === 'Syma S111G') || (value === 'Syma S107G')) {
+        if (value === 'Syma S107G') {
+            document.body.style.backgroundImage = "url('img/all_037a_015.jpg')";
+        } else {
+            document.body.style.backgroundImage = "url('img/cockpit1024.jpg')";
+        }
+
         if (copterType != copter107) {
             copterType = copter107;
             maxYaw = maxYaw107;
@@ -358,6 +364,7 @@ function copterChange(value) {
             stepTrim = stepTrim107;
         }
     } else if (value === 'Syma S026G') {
+        document.body.style.backgroundImage = "url('img/ch47f.png')";
         if (copterType != copter026) {
             copterType = copter026;
             maxYaw = maxYaw026;
