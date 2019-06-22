@@ -2,7 +2,32 @@
  * Управление вертолетами Syma S111G(S107G) и S026
  * оригинал: https://github.com/infusion/Fritzing/tree/master/Syma-S107G
  *
-  Формат пакета S107:
+ *
+ Формат пакета от пульта управления для S107G/S111G:
+    HHHTTTYYYPPPMMMSSSS\n
+    HHH = 107
+    TTT - Throttle          0..127
+    YYY - Yaw               0..127
+    PPP - Pitch             0..127
+    MMM - Trim              0..127
+    SSS - контрольная сумма HHH + TTT + YYY + PPP + MMM (последние 4 знака)
+    
+    для S026:
+    HHHTTTYYYPPBMMMSSSS\n
+    HHH = 026
+    TTT - Throttle          0..127
+    YYY - Yaw               0..63
+    PP  - Pitch             0..16
+    B   - Buttons           0..2
+    MMM - Trim              0..31
+    SSS - контрольная сумма HHH + TTT + YYY + PP + B + MMM (последние 4 знака)
+
+    запрос состояния:
+    9990000000000000999\n
+
+ *
+ 
+  Формат пакета к S107:
   HH 0YYYYYYY 0PPPPPPP CTTTTTTT 0AAAAAAA F
   Y - Yaw 0-127, (0=left, 63=center, 127=right)
   P - Pitch 0-127, (0=backwards, 63=hold, 127=forward)
@@ -18,7 +43,7 @@
   F - Footer:
       312us HIGH
 
-  Формат пакета S026:
+  Формат пакета к S026:
      0     6 7    12 13  16 17  20 21   26
   HH TTTTTTT YYYYYY   BBBB   PPPP   MMMMM  F
   Y - Yaw 0-63, (0=left, 31=center, 63=right)
@@ -30,26 +55,6 @@
 */
  
 #include <TimerOne.h>
-#include <Wire.h>
-#include <LiquidCrystal_I2C.h>
-
-// MPU9250/MPU6500
-#define MPU9250_ADDRESS 0x68
-#define MAG_ADDRESS 0x0C
-
-#define GYRO_FULL_SCALE_250_DPS 0x00
-#define GYRO_FULL_SCALE_500_DPS 0x08
-#define GYRO_FULL_SCALE_1000_DPS 0x10
-#define GYRO_FULL_SCALE_2000_DPS 0x18
-
-#define ACC_FULL_SCALE_2_G 0x00
-#define ACC_FULL_SCALE_4_G 0x08
-#define ACC_FULL_SCALE_8_G 0x10
-#define ACC_FULL_SCALE_16_G 0x18
-
-// JoyStick
-#define joyX A0
-#define joyY A1
 
 // IR Timing
 // set pwm active on pin 3
@@ -66,19 +71,13 @@
 #define PITCH_107 128
 #define PITCH_026 16
 #define TRIM_107  128
-#define TRIM_026  31
+#define TRIM_026  32
 
 // Syma S107G parameters
 uint8_t Throttle = 0; // 0-127
 uint8_t Yaw = 63; // 0-127, center=63
 uint8_t Pitch = 63; // 0-127, center=63
 uint8_t Trim = 63; // 0-127, center=63
-
-// Syma S026 parameters
-uint8_t Throttle026 = 0; // 0-127
-uint8_t Yaw026 = 31; // 0-63, center=31
-uint8_t Pitch026 = 7; // 0-15, center=7
-uint8_t Trim026 = 15; // 0-31, center=15
 
 
 // Syma S107G send command
@@ -191,33 +190,14 @@ void sendCommand026(uint8_t yaw, uint8_t pitch, uint8_t throttle, uint8_t trimc,
     SET_LOW_FINAL();
 }
 
+#define battPin A0  // вход измерения напряжения батареи
 
-// This function read Nbytes bytes from I2C device at address Address.
-// Put read bytes starting at register Register in the Data array.
-void I2Cread(uint8_t Address, uint8_t Register, uint8_t Nbytes, uint8_t* Data)
-{
-    // Set register address
-    Wire.beginTransmission(Address);
-    Wire.write(Register);
-    Wire.endTransmission();
-
-    // Read Nbytes
-    Wire.requestFrom(Address, Nbytes);
-    uint8_t index=0;
-    while (Wire.available())
-    Data[index++]=Wire.read();
+void sendState(void) {
+  char pack[24];
+  int batt = analogRead(battPin);
+  sprintf(pack, "999%04d00000000%04d\n", batt, batt);
+  Serial.print(pack);
 }
-
-// Write a byte (Data) in device (Address) at register (Register)
-void I2CwriteByte(uint8_t Address, uint8_t Register, uint8_t Data)
-{
-    // Set register address
-    Wire.beginTransmission(Address);
-    Wire.write(Register);
-    Wire.write(Data);
-    Wire.endTransmission();
-}
-      
 
 bool cmdSended = false;
 uint8_t ThrottleMax = THR_107 - 1;
@@ -226,10 +206,9 @@ uint8_t PitchMax = PITCH_107 - 1;
 uint8_t TrimMax = TRIM_107 - 1;
 uint8_t butt026 = 0;  // кнопки 026
 
-// кнопка джойстика
-int buttJoy = 7;   // D7
-int copterSw = 6; // D6
-// тип вертолета
+// кнопка сброса
+int buttReset = 7;   // D7
+
 int copter = 1; // 1 - S111/107, 0 - S026
 
 
@@ -243,226 +222,178 @@ void timerISR() {
     cmdSended = true;
 }
 
-LiquidCrystal_I2C lcd(0x27, 16, 2);
+
+void setCopter(uint8_t copt) {
+   if (copt == 0) {
+        ThrottleMax = THR_026 - 1;       
+        YawMax = YAW_026 - 1;
+        Yaw = YAW_026 / 2 - 1;
+        PitchMax = PITCH_026 - 1;
+        Pitch = PITCH_026 / 2 - 1;
+        TrimMax = TRIM_026 - 1;
+        Trim = TRIM_026 / 2 - 1;
+    }
+    else {
+        ThrottleMax = THR_107 - 1;
+        YawMax = YAW_107 - 1;
+        Yaw = YAW_107 / 2 - 1;
+        PitchMax = PITCH_107 - 1;
+        Pitch = PITCH_107 / 2 - 1;
+        TrimMax = TRIM_107 - 1;      
+        Trim = TRIM_107 / 2 - 1;
+    }
+    copter = copt;
+    Throttle = 0;
+}
+
+unsigned long timeLastCmd = 0;
+unsigned long timeStat = 0;
+unsigned long timeNow = 0;
+
+#define STAT_INTERVAL   500   // интервал отправки статуса, mS
+#define NO_CMD_INTERVAL 2000  // останов при отсутствии команд, mS
 
 
 void setup() {
     Serial.begin(115200);
-    Wire.begin();
    
     // IR LEDS
     pinMode(3, OUTPUT);
     digitalWrite(3, LOW);
 
-    // кнопка джойстика 
-    pinMode(buttJoy,INPUT);
-    digitalWrite(buttJoy, HIGH);
-
-    // тип вертолета
-    pinMode(copterSw,INPUT);
-    digitalWrite(copterSw, HIGH);
-
-    if (digitalRead(copterSw) == LOW) {
-        copter = 0;
-        ThrottleMax = THR_026 - 1;
-        YawMax = YAW_026 - 1;
-        PitchMax = PITCH_026 - 1;
-        TrimMax = TRIM_026 - 1;
-    }
+    // кнопка сброса 
+    pinMode(buttReset,INPUT);
+    digitalWrite(buttReset, HIGH);
 
     // LED
     pinMode(13, OUTPUT);
     digitalWrite(13, LOW);
 
-    // Set accelerometers low pass filter at 5Hz
-    I2CwriteByte(MPU9250_ADDRESS,29,0x06);
-    // Set gyroscope low pass filter at 5Hz
-    I2CwriteByte(MPU9250_ADDRESS,26,0x06);
-
-    // Configure gyroscope range
-    I2CwriteByte(MPU9250_ADDRESS,27,GYRO_FULL_SCALE_1000_DPS);
-    // Configure accelerometers range
-    I2CwriteByte(MPU9250_ADDRESS,28,ACC_FULL_SCALE_4_G);
-    // Set by pass mode for the magnetometers
-    I2CwriteByte(MPU9250_ADDRESS,0x37,0x02);
-
-    // Request continuous magnetometer measurements in 16 bits
-    I2CwriteByte(MAG_ADDRESS,0x0A,0x16);
-
     //setup interrupt interval: 180ms
     Timer1.initialize(180000);  //180000
     Timer1.attachInterrupt(timerISR);
 
-    //setup PWM: f=38Khz PWM=50%
-    // COM2A = 00: disconnect OC2A
-    // COM2B = 00: disconnect OC2B; to send signal set to 10: OC2B non-inverted
-    // WGM2 = 101: phase-correct PWM with OCRA as top
-    // CS2 = 000: no prescaling
+    /*
+    setup PWM: f=38Khz PWM=50%
+      COM2A = 00: disconnect OC2A
+      COM2B = 00: disconnect OC2B; to send signal set to 10: OC2B non-inverted
+      WGM2 = 101: phase-correct PWM with OCRA as top
+      CS2 = 000: no prescaling
+    */
     TCCR2A = _BV(WGM20);
     TCCR2B = _BV(WGM22) | _BV(CS20);
 
     // Timer value
     OCR2A = 8000 / 38;
-    OCR2B = OCR2A / 2; // 50% duty cycle
+    OCR2B = OCR2A / 2; // 50% duty cycle 
 
-    lcd.init();                      // initialize the lcd 
-    lcd.backlight();
-    lcd.setCursor(0,0);
-    lcd.print("Remote init...");
-
-    
+    timeLastCmd = timeNow = timeStat = millis();
 }
 
 
-uint8_t BufAcc[14];
+char stcmd[24];
+uint8_t icmd = 0;
+int t = 0;
+bool stateReq = false;
 
 void loop() {
+    uint8_t thr = 0, ya = 0, pit = 0, tri = 0, bt =  0, pib = 0, sum = 0;
+    char val[8];
 
-    if (cmdSended) {  // обрабатываем гироскоп и джойстик после отправки пакета ?
-        // гироскоп
-        I2Cread(MPU9250_ADDRESS,0x3B,14,BufAcc);
-        // Create 16 bits values from 8 bits data
-        // Accelerometer
-        int16_t ax = -(BufAcc[0]<<8 | BufAcc[1]); // Yaw
-        int16_t ay = -(BufAcc[2]<<8 | BufAcc[3]); // Pitch
-        //int16_t az = BufAcc[4]<<8 | BufAcc[5];
-
-        uint8_t ya = Yaw;
-        uint8_t ya2 = (YawMax - 1) / 2; // 63 || 31
-        if ((ax > -2000) && (ax < 2000)) {
-            ya = ya2;
-        }
-        else {
-            int8_t axt = (int8_t)(ax / 100);
-            if (axt > 0) {
-              axt -=20;
-            }
-            else {
-              axt += 20;
-            }
-            if (axt > (ya2 + 1)) {
-                axt = ya2 + 1;
-            }
-            else if (axt < -ya2) {
-                axt = -ya2;
-            }
-            ya = (uint8_t)(ya2 + axt);
-        }
-        noInterrupts();
-        Yaw = ya;
-        interrupts();
+    timeNow = millis();
     
-        uint8_t p = Pitch;
-        uint8_t p2 = (PitchMax - 1) / 2; // 63 || 7
-        if ((ay > -2000) && (ay < 2000)) {
-            p = p2;
-        }
-        else {
-            int8_t ayt = (int8_t)(ay / 100);
-            if (ayt > 0) {
-              ayt -=20;
-            }
-            else {
-              ayt += 20;
-            }
-            if (ayt > (p2 + 1)) {
-                ayt = p2 + 1;
-            }
-            else if (ayt < -p2) {
-                ayt = -p2;
-            }
-            p = (uint8_t)(p2 + ayt);
-        }
-        noInterrupts();
-        Pitch = p;
-        interrupts();
-    
-        // джойстик
-        int xValue = analogRead(joyX);  // Throttle
-        int yValue = analogRead(joyY);  // Trim
+    if (Serial.available() > 0) {
+        char ch = Serial.read();
+        //Serial.print(ch);
 
-        uint8_t th = Throttle;
-        if (xValue > 810) {
-            if (th < (ThrottleMax - 9)) {
-                th += 10;
-            }
-            else {
-                th = ThrottleMax;
-            }
-        }
-        else if (xValue > 610) {
-            if (th < ThrottleMax) {
-                th += 1;
-            }
-        }
-        else if (xValue < 212) {
-            if (th > 9) {
-                th -= 10;
-            }
-            else {
-                th = 0;
-            }
-        } else if (xValue < 412) {
-            if (th > 0) {
-                th -= 1;
-            }
-        }
-        noInterrupts();
-        Throttle = th;
-        interrupts();
+        if ((ch != '\n') && (icmd < 20)) {
+          stcmd[icmd++] = ch;
+        } else {
+          //Serial.println(stcmd);
 
-        uint8_t tm = Trim;
-        if (yValue > 810) {   // Trim
-            if (tm < (TrimMax - 9)) {
-                tm += 10;
-            }
-            else {
-                tm = TrimMax;
-            }
-        }
-        else if (yValue > 610) {
-            if (tm < TrimMax) {
-                tm += 1;
-            }
-        }
-        else if (yValue < 212) {
-            if (tm > 9) {
-                tm -= 10;
-            }
-            else {
-                tm = 0;
-            }
-        }
-        else if (yValue < 412) {
-            if (tm > 0) {
-                tm -= 1;
-            }
-            else {
-                tm = 0;
-            }
-        }
-        noInterrupts();
-        Trim = tm;
-        interrupts();
+          if (icmd < 19) {  // плохой пакет или обрыв связи с пультом
+              timeLastCmd -= STAT_INTERVAL; // отдаляем время последней команды
+                                            // 4 потери - сброс
+          } else {
+            // HHH  
+              strncpy(val, &stcmd[3], 3);
+              val[3] = '\0';
+              t = atoi(val);
+            
+              if ((t == 107) || (t == 111)) {
+                  if (copter != 1) {  // сменился тип вертолета
+                      copter = 1; // S107/111
+                      setCopter(copter);                    
+                  }
+              } else if (t == 26) {
+                  if (copter != 0) {  // сменился тип вертолета
+                      copter = 0; // S026
+                      setCopter(copter);                    
+                  }                
+              } else {  // остальное интерпретируем как запрос состояния
+                  stateReq = true;  
+              }
+                
+              if (stateReq) {
+                sendState();
+                stateReq = false;
+                timeStat = millis();          
+              } else {  // разбираем параметры
+                  strncpy(val, &stcmd[3], 3);
+                  val[3] = '\0';
+                  thr = atoi(val);
+                  
+                  strncpy(val, &stcmd[6], 3);
+                  val[3] = '\0';
+                  ya = atoi(val);
 
-        if (digitalRead(buttJoy) == LOW) {
-            noInterrupts();
-            Throttle = 0;
-            Yaw = 63;
-            Pitch = 63;
-            Trim = 63;
-            interrupts();
-        }
+                  strncpy(val, &stcmd[9], 3);
+                  val[3] = '\0';
+                  pib = atoi(val);
 
-        char st[16];
-        sprintf(st, "Thr:%3d Trm:%3d", Throttle, Trim);
-        lcd.setCursor(0,0);
-        lcd.print(st);
-        Serial.println(st);
-        sprintf(st, "Yaw:%3d Pit:%3d",Yaw - YawMax / 2, Pitch - PitchMax / 2);
-        lcd.setCursor(0,1);
-        lcd.print(st);
-        Serial.println(st);
-        cmdSended = false;
+                  if (copter == 0) { // S026
+                      strncpy(val, &stcmd[9], 2);
+                      val[2] = '\0';
+                      pit = atoi(val);
+                      bt = (uint8_t)(stcmd[11] - 0x30);
+                  } else {
+                    pit = pib;
+                  }
+
+                  strncpy(val, &stcmd[12], 3);
+                  val[3] = '\0';
+                  tri = atoi(val);
+
+                  strncpy(val, &stcmd[15], 4);
+                  val[4] = '\0';
+                  sum = atoi(val);
+
+                  if (sum == (t + thr + ya + pib + tri)) {
+                      noInterrupts();
+                      Throttle = thr;
+                      Yaw = ya;
+                      Pitch = pit;
+                      Trim = tri;
+                      butt026 = bt;
+                      interrupts();
+                      timeLastCmd = millis();
+                  }
+              }            
+          }                         
+          stcmd[icmd] = '\0';
+          icmd = 0;         
+        } 
+    } else {  // нет данных от BLE
+      if ((timeNow - timeLastCmd) > NO_CMD_INTERVAL) {
+          // долго нет команд - останов
+          setCopter(copter);
+      } else {
+          if ((timeNow - timeStat) > STAT_INTERVAL) {
+              sendState();
+              stateReq = false;
+              timeStat = millis();
+          }
+      }
+       
     }
 }
