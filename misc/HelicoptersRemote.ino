@@ -78,7 +78,17 @@ uint8_t Throttle = 0; // 0-127
 uint8_t Yaw = 63; // 0-127, center=63
 uint8_t Pitch = 63; // 0-127, center=63
 uint8_t Trim = 63; // 0-127, center=63
+uint8_t butt026 = 0;  // кнопки 026
 
+uint8_t ThrottleMax = THR_107 - 1;
+uint8_t YawMax = YAW_107 - 1;
+uint8_t PitchMax = PITCH_107 - 1;
+uint8_t TrimMax = TRIM_107 - 1;
+
+// кнопка сброса
+int buttReset = 7;   // D7
+
+int copter = 1; // 1 - S111/107, 0 - S026
 
 // Syma S107G send command
 //void sendCommand(uint8_t yaw, uint8_t pitch, uint8_t throttle, uint8_t trimc, uint8_t channel) {
@@ -193,24 +203,23 @@ void sendCommand026(uint8_t yaw, uint8_t pitch, uint8_t throttle, uint8_t trimc,
 #define battPin A0  // вход измерения напряжения батареи
 
 void sendState(void) {
-  char pack[24];
-  int batt = analogRead(battPin);
-  sprintf(pack, "999%04d00000000%04d\n", batt, batt);
-  Serial.print(pack);
+    char pack[24];
+    int batt = analogRead(battPin);
+    if (batt > 999) {
+        batt = 999;
+    }
+    int h = 0;
+    if (copter == 0) {
+        h = 26;
+        sprintf(pack, "%03d%03d%03d%02d%1d%3d%04d\n", h, Throttle, Yaw, Pitch, butt026, batt,
+          (h + Throttle + Yaw + Pitch + butt026 + batt));
+    } else {
+        h = 107;
+        sprintf(pack, "%03d%03d%03d%03d%3d%04d\n", h, Throttle, Yaw, Pitch, batt,
+          (h + Throttle + Yaw + Pitch + batt));      
+    }
+    Serial.print(pack);
 }
-
-bool cmdSended = false;
-uint8_t ThrottleMax = THR_107 - 1;
-uint8_t YawMax = YAW_107 - 1;
-uint8_t PitchMax = PITCH_107 - 1;
-uint8_t TrimMax = TRIM_107 - 1;
-uint8_t butt026 = 0;  // кнопки 026
-
-// кнопка сброса
-int buttReset = 7;   // D7
-
-int copter = 1; // 1 - S111/107, 0 - S026
-
 
 void timerISR() {
     if (copter == 0) {
@@ -219,9 +228,7 @@ void timerISR() {
     else {
       sendCommand(Yaw, Pitch, Throttle, Trim);
     }
-    cmdSended = true;
 }
-
 
 void setCopter(uint8_t copt) {
    if (copt == 0) {
@@ -246,12 +253,13 @@ void setCopter(uint8_t copt) {
     Throttle = 0;
 }
 
+#define STAT_INTERVAL   1000   // интервал отправки статуса, mS
+#define NO_CMD_INTERVAL 4000  // останов при отсутствии команд, mS
+
 unsigned long timeLastCmd = 0;
 unsigned long timeStat = 0;
 unsigned long timeNow = 0;
 
-#define STAT_INTERVAL   500   // интервал отправки статуса, mS
-#define NO_CMD_INTERVAL 2000  // останов при отсутствии команд, mS
 
 
 void setup() {
@@ -291,12 +299,13 @@ void setup() {
 }
 
 
-char stcmd[24];
-uint8_t icmd = 0;
-int t = 0;
-bool stateReq = false;
 
 void loop() {
+    char stcmd[24];
+    uint8_t icmd = 0;
+    int t = 0;
+    bool stateReq = false;
+
     uint8_t thr = 0, ya = 0, pit = 0, tri = 0, bt =  0, pib = 0, sum = 0;
     char val[8];
 
@@ -304,96 +313,94 @@ void loop() {
     
     if (Serial.available() > 0) {
         char ch = Serial.read();
-        //Serial.print(ch);
 
         if ((ch != '\n') && (icmd < 20)) {
-          stcmd[icmd++] = ch;
+            stcmd[icmd++] = ch;
         } else {
-          //Serial.println(stcmd);
-
-          if (icmd < 19) {  // плохой пакет или обрыв связи с пультом
-              timeLastCmd -= STAT_INTERVAL; // отдаляем время последней команды
-                                            // 4 потери - сброс
-          } else {
-            // HHH  
-              strncpy(val, &stcmd[3], 3);
-              val[3] = '\0';
-              t = atoi(val);
-            
-              if ((t == 107) || (t == 111)) {
-                  if (copter != 1) {  // сменился тип вертолета
-                      copter = 1; // S107/111
-                      setCopter(copter);                    
-                  }
-              } else if (t == 26) {
-                  if (copter != 0) {  // сменился тип вертолета
-                      copter = 0; // S026
-                      setCopter(copter);                    
-                  }                
-              } else {  // остальное интерпретируем как запрос состояния
-                  stateReq = true;  
-              }
+            //Serial.println(stcmd);
+            if (icmd < 19) {  // плохой пакет или обрыв связи с пультом
+                timeLastCmd -= STAT_INTERVAL; // отдаляем время последней команды
+                                              // 4 потери - сброс
+            } else {
+                // HHH  
+                strncpy(val, &stcmd[3], 3);
+                val[3] = '\0';
+                t = atoi(val);            
+                if ((t == 107) || (t == 111)) {
+                    if (copter != 1) {  // сменился тип вертолета
+                        copter = 1; // S107/111
+                        setCopter(copter);                    
+                    }
+                } else if (t == 26) {
+                    if (copter != 0) {  // сменился тип вертолета
+                        copter = 0; // S026
+                        setCopter(copter);                    
+                    }                
+                } else {  // остальное интерпретируем как запрос состояния
+                    stateReq = true;  
+                }
                 
-              if (stateReq) {
-                sendState();
-                stateReq = false;
-                timeStat = millis();          
-              } else {  // разбираем параметры
-                  strncpy(val, &stcmd[3], 3);
-                  val[3] = '\0';
-                  thr = atoi(val);
+                if (stateReq) {
+                    sendState();
+                    stateReq = false;
+                    timeStat = millis();          
+                } else {  // разбираем остальные параметры
+                    strncpy(val, &stcmd[3], 3);
+                    val[3] = '\0';
+                    thr = atoi(val);
                   
-                  strncpy(val, &stcmd[6], 3);
-                  val[3] = '\0';
-                  ya = atoi(val);
+                    strncpy(val, &stcmd[6], 3);
+                    val[3] = '\0';
+                    ya = atoi(val);
 
-                  strncpy(val, &stcmd[9], 3);
-                  val[3] = '\0';
-                  pib = atoi(val);
+                    strncpy(val, &stcmd[9], 3);
+                    val[3] = '\0';
+                    pib = atoi(val);
+                    if (copter == 0) { // S026
+                        strncpy(val, &stcmd[9], 2);
+                        val[2] = '\0';
+                        pit = atoi(val);
+                        bt = (uint8_t)(stcmd[11] - 0x30);
+                    } else {
+                        pit = pib;
+                    }
 
-                  if (copter == 0) { // S026
-                      strncpy(val, &stcmd[9], 2);
-                      val[2] = '\0';
-                      pit = atoi(val);
-                      bt = (uint8_t)(stcmd[11] - 0x30);
-                  } else {
-                    pit = pib;
-                  }
+                    strncpy(val, &stcmd[12], 3);
+                    val[3] = '\0';
+                    tri = atoi(val);
 
-                  strncpy(val, &stcmd[12], 3);
-                  val[3] = '\0';
-                  tri = atoi(val);
+                    strncpy(val, &stcmd[15], 4);
+                    val[4] = '\0';
+                    sum = atoi(val);
 
-                  strncpy(val, &stcmd[15], 4);
-                  val[4] = '\0';
-                  sum = atoi(val);
-
-                  if (sum == (t + thr + ya + pib + tri)) {
-                      noInterrupts();
-                      Throttle = thr;
-                      Yaw = ya;
-                      Pitch = pit;
-                      Trim = tri;
-                      butt026 = bt;
-                      interrupts();
-                      timeLastCmd = millis();
-                  }
-              }            
-          }                         
-          stcmd[icmd] = '\0';
-          icmd = 0;         
+                    if (sum == (t + thr + ya + pib + tri)) {
+                        noInterrupts();
+                        Throttle = thr;
+                        Yaw = ya;
+                        Pitch = pit;
+                        Trim = tri;
+                        if (copter == 0) {
+                            butt026 = bt;
+                        }
+                        interrupts();
+                        timeLastCmd = millis();
+                        digitalWrite(13, LOW);
+                    }
+                }            
+            }                         
+            stcmd[icmd] = '\0';
+            icmd = 0;         
         } 
     } else {  // нет данных от BLE
-      if ((timeNow - timeLastCmd) > NO_CMD_INTERVAL) {
-          // долго нет команд - останов
-          setCopter(copter);
-      } else {
-          if ((timeNow - timeStat) > STAT_INTERVAL) {
-              sendState();
-              stateReq = false;
-              timeStat = millis();
-          }
-      }
-       
+        if ((timeNow - timeLastCmd) > NO_CMD_INTERVAL) {
+            // долго нет команд - останов
+            setCopter(copter);
+            digitalWrite(13, HIGH);
+        }
+
+        if ((timeNow - timeStat) > STAT_INTERVAL) {
+            sendState();
+            timeStat = millis();
+        }
     }
 }

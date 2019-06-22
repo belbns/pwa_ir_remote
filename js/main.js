@@ -24,13 +24,10 @@
 
     Пакет от Ардуино:
 
-    состояние батареи
-    999BBBB00000000BBBBB\n
-
     текущие параметры:
-    107TTTYYYPPPMMMSSSS\n
+    107TTTYYYPPPVVVSSSS\n
     или
-    026TTTYYYPPBMMMSSSS\n
+    026TTTYYYPPBVVVSSSS\n
 
 */
 
