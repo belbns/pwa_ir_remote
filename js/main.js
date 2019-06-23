@@ -575,7 +575,7 @@ joystickYawPitch.on('move', function (evt, nipple) {
     if (flMove) {
         flMove = false;
         if ( (Math.abs(joyY - y) >= 1) || (Math.abs(joyX - x) >= 1) ) {
-            pitch = halfPitch + Math.round(y) * stepPitch;
+            pitch = halfPitch - Math.round(y) * stepPitch;
             if (pitch > maxPitch) {
                 pitch = maxPitch;
             } else if (pitch < 0) {

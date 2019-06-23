@@ -305,10 +305,12 @@ void setup() {
 }
 
 
+char stcmd[24];
+uint8_t icmd = 0;
+char sttt[64];
 
 void loop() {
-    char stcmd[24];
-    uint8_t icmd = 0;
+    
     int t = 0;
     bool stateReq = false;
 
@@ -327,13 +329,14 @@ void loop() {
         if ((ch != '\n') && (icmd < 20)) {
             stcmd[icmd++] = ch;
         } else {
+            //Serial.print("rec: ");
             //Serial.println(stcmd);
             if (icmd < 19) {  // плохой пакет
-                timeLastCmd -= STAT_INTERVAL; // отдаляем время последней команды
+                //timeLastCmd -= STAT_INTERVAL; // отдаляем время последней команды
                                               // 4 потери - сброс
             } else {
                 // HHH  
-                strncpy(val, &stcmd[3], 3);
+                strncpy(val, &stcmd[0], 3);
                 val[3] = '\0';
                 t = atoi(val);            
                 if ((t == 107) || (t == 111)) {
@@ -382,7 +385,20 @@ void loop() {
                     strncpy(val, &stcmd[15], 4);
                     val[4] = '\0';
                     sum = atoi(val);
+                    
+                    sprintf(sttt, "New: %d %d %d %d\n", thr, ya, pit, tri);
+                    Serial.print(sttt);
+                    noInterrupts();
+                    Throttle = thr;
+                    Yaw = ya;
+                    Pitch = pit;
+                    Trim = tri;
+                    if (copter == 0) {
+                        butt026 = bt;
+                    }
+                    interrupts();
 
+/*
                     if (sum == (t + thr + ya + pib + tri)) {
                         noInterrupts();
                         Throttle = thr;
@@ -396,18 +412,20 @@ void loop() {
                         timeLastCmd = millis();
                         digitalWrite(13, LOW);
                     }
+*/
                 }            
             }                         
             stcmd[icmd] = '\0';
             icmd = 0;         
         } 
     } else {  // нет данных от BLE
+      /*
         if ((timeNow - timeLastCmd) > NO_CMD_INTERVAL) {
             // долго нет команд - останов
             setCopter(copter);
             digitalWrite(13, HIGH);
         }
-
+    */
         if ((timeNow - timeStat) > STAT_INTERVAL) {
             sendState();
             timeStat = millis();
