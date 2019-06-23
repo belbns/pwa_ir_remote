@@ -451,18 +451,19 @@ function handleCharacteristicValueChanged(event) {
 
             }
         }
+        sendToBLE(copterType);
     }
 }
 
 function crtrl_on(sw) {
     if (sw.checked) {
         // connect to BLE
-        //connect();
+        connect();
         ctrlFlag = true;
         writeToScreen("switch on");
     }
     else {
-        //disconnect();
+        disconnect();
         ctrlFlag = false;
         writeToScreen("switch off");
     }

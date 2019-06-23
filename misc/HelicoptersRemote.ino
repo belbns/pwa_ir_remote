@@ -87,6 +87,7 @@ uint8_t TrimMax = TRIM_107 - 1;
 
 // кнопка сброса
 int buttReset = 7;   // D7
+int pinConnected = 12; // D12 - HIGH - connected
 
 int copter = 1; // 1 - S111/107, 0 - S026
 
@@ -218,7 +219,9 @@ void sendState(void) {
         sprintf(pack, "%03d%03d%03d%03d%3d%04d\n", h, Throttle, Yaw, Pitch, batt,
           (h + Throttle + Yaw + Pitch + batt));      
     }
-    Serial.print(pack);
+    if (digitalRead(pinConnected) == HIGH) {
+        Serial.print(pack);
+    }
 }
 
 void timerISR() {
@@ -273,6 +276,9 @@ void setup() {
     pinMode(buttReset,INPUT);
     digitalWrite(buttReset, HIGH);
 
+    // HIGH - BLE connected
+    pinMode(pinConnected, INPUT);
+
     // LED
     pinMode(13, OUTPUT);
     digitalWrite(13, LOW);
@@ -309,6 +315,10 @@ void loop() {
     uint8_t thr = 0, ya = 0, pit = 0, tri = 0, bt =  0, pib = 0, sum = 0;
     char val[8];
 
+    if ((digitalRead(pinConnected) == LOW) && (Throttle > 0)) {
+        setCopter(copter);  
+    }
+    
     timeNow = millis();
     
     if (Serial.available() > 0) {
@@ -318,7 +328,7 @@ void loop() {
             stcmd[icmd++] = ch;
         } else {
             //Serial.println(stcmd);
-            if (icmd < 19) {  // плохой пакет или обрыв связи с пультом
+            if (icmd < 19) {  // плохой пакет
                 timeLastCmd -= STAT_INTERVAL; // отдаляем время последней команды
                                               // 4 потери - сброс
             } else {
