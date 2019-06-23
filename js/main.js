@@ -584,7 +584,7 @@ joystickYawPitch.on('move', function (evt, nipple) {
             joyY = y;
             setPitch = pitch;
 
-            yaw = halfYaw - Math.round(x) * stepYaw;
+            yaw = halfYaw + Math.round(x) * stepYaw;
             if (yaw > maxYaw) {
                 yaw = maxYaw;
             } else if (yaw < 0) {
