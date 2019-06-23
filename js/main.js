@@ -384,7 +384,7 @@ function copterChange(value) {
     setButt = 0;
     document.getElementById('throttle').value = setThrottle;
     gaugeUpdate();
-    sendToBLE(copterType);
+    sendToBLE();
 
 /*
     getComputedStyle(document.documentElement).getPropertyValue('--my-variable-name');
@@ -451,7 +451,8 @@ function handleCharacteristicValueChanged(event) {
 
             }
         }
-        sendToBLE(copterType);
+
+        sendToBLE();
     }
 }
 
@@ -508,17 +509,17 @@ function cleanScreen() {
 }
 
 //function sendToBLE(token, newcmd, par1, devnum) {
-function sendToBLE(ctype) {
+function sendToBLE() {
 
     var st = '---';
-    if (ctype === '107') {
-        var is = parseInt(ctype) + setThrottle + setYaw + setPitch + setTrim;
+    if ((copterType === '107') || (copterType === '111')) {
+        var is = 107 + setThrottle + setYaw + setPitch + setTrim;
         var ss = ('000' + is).slice(-4);
         //var s4 = ss.slice(-4);
-        st = ctype + ('000' + setThrottle).slice(-3) +
+        st = copterType + ('000' + setThrottle).slice(-3) +
             ('000' + setYaw).slice(-3) +
             ('000' + setPitch).slice(-3) +
-            ('000' + setTrim).slice(-3) + ss + '\n';
+            ('000' + setTrim).slice(-3) + ss;
     }
 
     if (st !== '---') {
@@ -597,7 +598,7 @@ joystickYawPitch.on('move', function (evt, nipple) {
 
     if (flMove) {
         gaugeUpdate();
-        sendToBLE(copterType);
+        sendToBLE();
     }
 });
 
@@ -605,7 +606,7 @@ joystickYawPitch.on('end', function () {
     setPitch = halfPitch;
     setYaw = halfYaw;
     gaugeUpdate();
-    sendToBLE(copterType);
+    sendToBLE();
 });
 
 function calcContCenter(cont) {
@@ -623,7 +624,7 @@ function throttleInput(value) {
     document.getElementById('lthrottle').innerHTML = 'Throttle: ' + value;
     setThrottle = value;
     gaugeUpdate();
-    sendToBLE(copterType);
+    sendToBLE();
 }
 
 function resize_on() {
