@@ -345,8 +345,8 @@ void loop() {
             if ((ch != '\n') && (icmd < 20)) {
                 stcmd[icmd++] = ch;
             } else {
-                //Serial.print("rec: ");
-                //Serial.println(stcmd);
+                Serial.print("rec: ");
+                Serial.println(stcmd);
                 if (icmd >= 19) {  // нормальный пакет
                     strncpy(val, &stcmd[0], 3);
                     val[3] = '\0';
@@ -380,7 +380,11 @@ void loop() {
                     strncpy(val, &stcmd[15], 4);
                     val[4] = '\0';
                     sum = atoi(val);
-                    
+                    /*
+                    sprintf(sttt, "New: %d %d %d %d %d %d %d\n", hh, thr, ya, pit, tri, sum,
+                      hh + thr + ya + pit + tri);
+                    Serial.print(sttt);
+                    */
                     // контрольная сумма совпала и тип правильный
                     if ( (sum == (hh + thr + ya + pib + tri)) &&
                       ((hh == 107) || (hh == 111) || (hh == 26)) ) {
@@ -396,9 +400,9 @@ void loop() {
                         //Serial.print(sttt);
                         noInterrupts();
                         Throttle = (uint8_t)thr;
-                        Yaw = (uint8_t)ya;
-                        Pitch = (uint8_t)pit;
-                        Trim = (uint8_t)tri;
+                        Yaw = (uint8_t)(YawMax - ya);
+                        Pitch = (uint8_t)(PitchMax - pit);
+                        Trim = (uint8_t)(TrimMax - tri);
                         if (copter == 0) {
                             butt026 = (uint8_t)bt;
                         }
