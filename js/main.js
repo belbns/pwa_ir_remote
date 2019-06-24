@@ -120,7 +120,8 @@ function connect() {
         requestBluetoothDevice()).
         then(device => connectDeviceAndCacheCharacteristic(device)).
         then(characteristic => startNotifications(characteristic)).
-        catch(error => writeToScreen(error));
+        catch(error => document.getElementById("togglesw").checked = false)
+        //catch(error => writeToScreen(error));
 
     if (ret) {
         document.getElementById('rmark_motl').style.visibility = 'visible';
@@ -429,19 +430,17 @@ function handleCharacteristicValueChanged(event) {
 }
 
 function crtrl_on(sw) {
-    // сброс параметров передачи
+    // сброс параметров движения
     copterChange(document.getElementById('soflow-color').value);
     if (sw.checked) {
         // connect to BLE
         connect();
         ctrlFlag = true;
-        //writeToScreen("switch on");
     }
     else {
         sendToBLE();
         disconnect();
         ctrlFlag = false;
-        //writeToScreen("switch off");
     }
 }
 
