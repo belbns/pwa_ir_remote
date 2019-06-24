@@ -24,6 +24,7 @@ body {
   overflow: hidden;
 }
 
+/* disable mouse select */
 .noselect {
     -webkit-touch-callout: none;/* iOS Safari */
     -webkit-user-select: none;  /* Safari */
@@ -238,11 +239,11 @@ select#soflow-color {
 
 .gauge__liveupdate .gauge--data,
 .gauge__liveupdate .gauge--needle {
-    -webkit-transition: all 0.2s ease-in-out;
-    -moz-transition: all 0.2s ease-in-out;
-    -ms-transition: all 0.2s ease-in-out;
-    -o-transition: all 0.2s ease-in-out;
-    transition: all 0.2s ease-in-out;
+    -webkit-transition: all 0.1s ease-in-out;
+    -moz-transition: all 0.1s ease-in-out;
+    -ms-transition: all 0.1s ease-in-out;
+    -o-transition: all 0.1s ease-in-out;
+    transition: all 0.1s ease-in-out;
 }
 .gauge--data {
     -webkit-transform: rotate(-.50turn);

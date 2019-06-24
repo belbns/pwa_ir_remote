@@ -128,7 +128,7 @@ function connect() {
         document.getElementById('rmark_ser').style.visibility = 'visible';
 
         cleanScreen();
-        writeToScreen('== BLE connected ==');
+        //writeToScreen('== BLE connected ==');
     }
     return ret;
 }
@@ -193,6 +193,8 @@ function disconnect() {
     }
 
     deviceCache = null;
+
+    // copterChange(document.getElementById('soflow-color').value);
 
 }
 
@@ -427,16 +429,19 @@ function handleCharacteristicValueChanged(event) {
 }
 
 function crtrl_on(sw) {
+    // сброс параметров передачи
+    copterChange(document.getElementById('soflow-color').value);
     if (sw.checked) {
         // connect to BLE
         connect();
         ctrlFlag = true;
-        writeToScreen("switch on");
+        //writeToScreen("switch on");
     }
     else {
+        sendToBLE();
         disconnect();
         ctrlFlag = false;
-        writeToScreen("switch off");
+        //writeToScreen("switch off");
     }
 }
 
@@ -447,7 +452,7 @@ function doSend(message) {
         return;
     }
     writeToCharacteristic(characteristicCache, message);
-    writeToScreen('send: ' + message);
+    //writeToScreen('send: ' + message);
 }
 
 // Записать значение в характеристику
@@ -523,69 +528,6 @@ var joystickYawPitch = nipplejs.create({
     color: 'blue',
     size: joystickSize
 });
-
-/*
-joystickYawPitch.on('move', function (evt, nipple) {
-
-    var ndir = nipple.angle.radian;
-    var ndist= nipple.distance;
-    //console.log('ndist=' + ndist + '  ndir=' + ndir);
-    var flMove = false;
-
-    var x = ndist * Math.cos(ndir);
-    if (Math.abs(x) < deadZone) {
-        x = 0;
-    } else {
-        if (x > 0) {
-            x = x - deadZone;
-        } else {
-            x = x + deadZone;
-        }
-        flMove = true;
-    }
-    var y = ndist * Math.sin(ndir);
-    if (Math.abs(y) < deadZone) {
-        y = 0;
-    } else {
-        if (y > 0) {
-            y = y - deadZone;
-        } else {
-            y = y + deadZone;
-        }
-        flMove = true;
-    }
-    //console.log('x=' + x + '  y=' + y);
-
-    if (flMove) {
-        flMove = false;
-        if ( (Math.abs(joyY - y) >= 1) || (Math.abs(joyX - x) >= 1) ) {
-            pitch = halfPitch - Math.round(y) * stepPitch;
-            if (pitch > maxPitch) {
-                pitch = maxPitch;
-            } else if (pitch < 0) {
-                pitch = 0;
-            }
-            joyY = y;
-            setPitch = pitch;
-
-            yaw = halfYaw - Math.round(x) * stepYaw;
-            if (yaw > maxYaw) {
-                yaw = maxYaw;
-            } else if (yaw < 0) {
-                yaw = 0;
-            }
-            joyX = x;
-            setYaw = yaw;
-            flMove = true;
-        }
-    }
-
-    if (flMove) {
-        gaugeUpdate();
-        sendToBLE();
-    }
-});
-*/
 joystickYawPitch.on('move', function (evt, nipple) {
 
     // x, y - px, integer 
