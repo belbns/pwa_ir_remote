@@ -494,7 +494,7 @@ function sendToBLE() {
     var ss = '';
 
     if ((copterType === '107') || (copterType === '111')) {
-        is = 107 + setThrottle + setYaw + setPitch + setTrim;
+        is = 107 + parseInt(setThrottle) + parseInt(setYaw) + parseInt(setPitch) + parseInt(setTrim);
         ss = ('000' + is).slice(-4);        
         st = copterType + ('000' + setThrottle).slice(-3) +
             ('000' + setYaw).slice(-3) +
