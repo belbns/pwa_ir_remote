@@ -121,14 +121,14 @@ function connect() {
         then(device => connectDeviceAndCacheCharacteristic(device)).
         then(characteristic => startNotifications(characteristic)).
         catch(error => document.getElementById("togglesw").checked = false);
-        //catch(error => writeToScreen(error));
+        //catch(error => resetParameters());
 
     if (ret) {
         document.getElementById('rmark_motl').style.visibility = 'visible';
         document.getElementById('rmark_motr').style.visibility = 'visible';
         document.getElementById('rmark_ser').style.visibility = 'visible';
 
-        cleanScreen();
+        //cleanScreen();
         //writeToScreen('== BLE connected ==');
     }
     return ret;
@@ -163,10 +163,10 @@ function handleDisconnection(event) {
 
     connectDeviceAndCacheCharacteristic(device).
         then(characteristic => startNotifications(characteristic)).
-        catch(error => log(error));
-
+        catch(error => resetParameters());
+        //catch(error => log(error));
     // сбрасываем togglesw
-    document.getElementById("togglesw").checked = false;
+    //document.getElementById("togglesw").checked = false;
 }
 
 // Отключиться от подключенного устройства
@@ -393,6 +393,9 @@ function copterChange(value) {
     sendToBLE();
 }
 
+function resetParameters() {
+    document.getElementById("togglesw").checked = false;
+}
 
 function handleCharacteristicValueChanged(event) {
     let value = new TextDecoder().decode(event.target.value);
