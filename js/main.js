@@ -120,7 +120,7 @@ function connect() {
         requestBluetoothDevice()).
         then(device => connectDeviceAndCacheCharacteristic(device)).
         then(characteristic => startNotifications(characteristic)).
-        catch(error => document.getElementById("togglesw").checked = false)
+        catch(error => document.getElementById("togglesw").checked = false);
         //catch(error => writeToScreen(error));
 
     if (ret) {
