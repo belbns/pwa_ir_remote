@@ -1,49 +1,92 @@
 /*
+    Пульт управления вертолетами с IR излучателем на базе Ардуино c модулем HM-10 через BLE
+    =======================================================================================
 
     Формат пакета к Ардуино для S107G/S111G:
-    HHHTTTYYYPPPMMMSSSS\n
+                            ---------------
+    HHH TTT YYY PPP MMM SSSS\n - 20 байт
     HHH = 107
     TTT - Throttle          0..127
     YYY - Yaw               0..127
     PPP - Pitch             0..127
     MMM - Trim              0..127
-    SSS - контрольная сумма HHH + TTT + YYY + PPP + MMM (последние 4 знака)
+    SSS - контрольная сумма HHH + TTT + YYY + PPP + MMM
     
     для S026:
-    HHHTTTYYYPPBMMMSSSS\n
+    --------
+    HHH TTT YYY PP B MMM SSSS\n - 20 байт
     HHH = 026
     TTT - Throttle          0..127
     YYY - Yaw               0..63
     PP  - Pitch             0..16
     B   - Buttons           0..2
     MMM - Trim              0..31
-    SSS - контрольная сумма HHH + TTT + YYY + PP + B + MMM (последние 4 знака)
-
-    запрос состояния:
-    9990000000000000999\n
+    SSS - контрольная сумма HHH + TTT + YYY + PP + B + MMM
 
     Пакет от Ардуино:
-
+          ----------
     текущие параметры:
-    107TTTYYYPPPVVVSSSS\n
+    107 TTT YYY PPP VVV SSSS\n - 20 байт
     или
-    026TTTYYYPPBVVVSSSS\n
+    026 TTT YYY PP B VVV SSSS\n
 
+    VVV - напряжение батареи 512 -> 5 вольт
+
+    После установления соединения c Ардуино через BLE
+    с интервалом в 500мС приходят пакеты с состоянием.
+    Данный пульт должен в ответ посылать пакет с подтверждением текущих параметров,
+    отсутствие 4-х пакетов подряд воспринимается как потеря управления и 
+    приводит к сбросу параметров, передаваемых вертолету.
+    
+    Изменение параметров через органы управления вызывают немедленную отправку пакета.
 */
 
-// переменные управления мобильной платформой
-var ctrlLeds = [0, 0, 0, 0];
-var LedsQueue = 0;
-var Dist = 2048;
-var DistQueue = 0;
-var CmdQueue = 0;
-var adc_val = [0, 0, 0, 0];
-var LowBatt = false;
-var HighLoad = false;
 
-const adcBattMin = 1580;
-const battMeterMax = 120;
+const joystickSize = 160;
+const deadZone = 16;
 
+
+const maxThrottle = 127;
+
+const maxYaw107 = 127;
+const maxPitch107 = 127;
+const maxTrim107 = 127;
+const stepYaw107 = 1;
+const stepPitch107 = 1;
+const stepTrim107 = 1;
+
+const maxYaw026 = 63;
+const maxPitch026 = 15;
+const maxTrim026 = 31;
+const stepYaw026 = 0.5;
+const stepPitch026 = 0.125;
+const stepTrim026 = 0.25;
+
+const copter107 = '107';
+const copter026 = '026';
+
+var copterType = copter107;
+
+var maxYaw = maxYaw107;
+var maxPitch = maxPitch107;
+var maxTrim = maxTrim107;
+
+var halfYaw = (maxYaw - 1) / 2;
+var halfPitch = (maxPitch - 1) / 2;
+var halfTrim = (maxTrim - 1) / 2;
+
+var stepYaw = stepYaw107;      
+var stepPitch = stepPitch107;
+var stepTrim = stepTrim107;
+
+const kBattery = 5.0 / 512;
+var statBattery = 9.0;
+
+var setThrottle = 0;
+var setYaw = halfYaw;
+var setPitch = halfPitch;
+var setTrim = halfTrim;
+var setButt = 0;
 
 
 /*
@@ -68,7 +111,10 @@ let deviceCache = null;
 // Кэш объекта характеристики
 let characteristicCache = null;
 
-// Запустить выбор Bluetooth устройства и подключиться к выбранному
+/* ============================== BLE =============================
+
+* Запустить выбор Bluetooth устройства и подключиться к выбранному
+*/
 function connect() {
     var ret = (deviceCache ? Promise.resolve(deviceCache) :
         requestBluetoothDevice()).
@@ -117,6 +163,9 @@ function handleDisconnection(event) {
     connectDeviceAndCacheCharacteristic(device).
         then(characteristic => startNotifications(characteristic)).
         catch(error => log(error));
+
+    // сбрасываем togglesw
+    document.getElementById("togglesw").checked = false;
 }
 
 // Отключиться от подключенного устройства
@@ -144,10 +193,6 @@ function disconnect() {
     }
 
     deviceCache = null;
-
-    document.getElementById('rmark_motl').style.visibility = 'hidden';
-    document.getElementById('rmark_motr').style.visibility = 'hidden';
-    document.getElementById('rmark_ser').style.visibility = 'hidden';
 
 }
 
@@ -194,6 +239,7 @@ function startNotifications(characteristic) {
 }
 
 
+/* ================ индикаторы Throttle, Pitch, Yaw ================ */
 function Gauge(el) {
 
         // ##### Private Properties and Attributes
@@ -252,78 +298,43 @@ function Gauge(el) {
         return exports;
 };
 
-
-/* Получение данных
-    Пакет от Ардуино:
-    состояние батареи
-    999BBBB00000000BBBBB\n
-    текущие параметры:
-    107TTTYYYPPPMMMSSSS\n
-    или
-    026TTTYYYPPBMMMSSSS\n
-*/
-const joystickSize = 192;
-const deadZone = 32;
-
-//
-const maxThrottle = 127;
-
-const maxYaw107 = 127;
-const maxPitch107 = 127;
-const maxTrim107 = 127;
-const stepYaw107 = 1;
-const stepPitch107 = 1;
-const stepTrim107 = 1;
-
-const maxYaw026 = 63;
-const maxPitch026 = 15;
-const maxTrim026 = 31;
-const stepYaw026 = 2;
-const stepPitch026 = 8;
-const stepTrim026 = 4;
-
-const copter107 = '107';
-const copter026 = '026';
-
-var copterType = copter107;
-
-var maxYaw = maxYaw107;
-var maxPitch = maxPitch107;
-var maxTrim = maxTrim107;
-
-var halfYaw = (maxYaw - 1) / 2;
-var halfPitch = (maxPitch - 1) / 2;
-var halfTrim = (maxTrim - 1) / 2;
-
-var stepYaw = stepYaw107;      
-var stepPitch = stepPitch107;
-var stepTrim = stepTrim107;
-
-//var distPitchYaw = 0;
-//var dirPitchYaw = 0;
-var joyX = 0;
-var joyY = 0;
-
-var statBattery = 9.0;
-
-var setThrottle = 0;
-var setYaw = halfYaw;
-var setPitch = halfPitch;
-var setTrim = halfTrim;
-var setButt = 0;
-
 var gaugepi = new Gauge(document.getElementById("gaugepi"));
 var gaugeya = new Gauge(document.getElementById("gaugeya"));
 var gaugeth = new Gauge(document.getElementById("gaugeth"));
 
+function gaugeUpdate() {
+/*
+    gaugepi.value(setPitch / maxPitch);
+    gaugeya.value(setYaw / maxYaw);
+    gaugeth.value(setThrottle / maxThrottle);
+*/
+    var tt = setPitch / (maxPitch - 1);
+    if (tt > 1) {
+        tt = 1;
+    }
+    gaugepi.value(tt);
+    tt = setYaw / (maxYaw - 1);
+    if (tt > 1) {
+        tt = 1;
+    }
+    gaugeya.value(tt);
+    gaugeth.value(setThrottle / maxThrottle);
+
+    document.getElementById('lthrottle').innerHTML = 'Throttle: ' + setThrottle;
+    document.getElementById('lpitch').innerHTML = 'Pitch: ' + (setPitch);
+    document.getElementById('lyaw').innerHTML = 'Yaw: ' + (setYaw);
+};
+
+gaugeUpdate();
+
+
 var win_width = window.screen.availWidth;
 document.body.style.width = win_width;
 var win_height = window.screen.availHeight;
-
-
-//document.body.style.height = 600 + 'px';
-//document.html.style.height = 600 + 'px';
 /*
+document.body.style.height = 600 + 'px';
+document.html.style.height = 600 + 'px';
+
 var ctrlCont = document.getElementById('control-container');
 var wh = document.documentElement.getBoundingClientRect().height; //ctrlCont.style.height;
 var ww = document.documentElement.getBoundingClientRect().width;
@@ -333,16 +344,8 @@ ctrlCont.style.top = (wh - ch) + 'px';  //91
 
 writeToScreen('height: ' + wh + '   width: ' + ww + '  ch: ' + ch + '  dpi: ' + dpi);
 */
-function gaugeUpdate() {
-    gaugepi.value(setPitch / maxPitch);
-    gaugeya.value(setYaw / maxYaw);
-    gaugeth.value(setThrottle / maxThrottle);
 
-    document.getElementById('lthrottle').innerHTML = 'Throttle: ' + setThrottle;
-    document.getElementById('lpitch').innerHTML = 'Pitch: ' + (setPitch - halfPitch);
-    document.getElementById('lyaw').innerHTML = 'Yaw: ' + (setYaw - halfYaw);
-};
-
+/* =================== обработка смены типа вертолета =================== */
 function copterChange(value) {
     if ((value === 'Syma S111G') || (value === 'Syma S107G')) {
         if (value === 'Syma S107G') {
@@ -350,27 +353,22 @@ function copterChange(value) {
         } else {
             document.body.style.backgroundImage = "url('img/cockpit1024.jpg')";
         }
-
-        if (copterType != copter107) {
-            copterType = copter107;
-            maxYaw = maxYaw107;
-            maxPitch = maxPitch107;
-            maxTrim = maxTrim107;
-            stepYaw = stepYaw107;      
-            stepPitch = stepPitch107;
-            stepTrim = stepTrim107;
-        }
+        copterType = copter107;
+        maxYaw = maxYaw107;
+        maxPitch = maxPitch107;
+        maxTrim = maxTrim107;
+        stepYaw = stepYaw107;      
+        stepPitch = stepPitch107;
+        stepTrim = stepTrim107;
     } else if (value === 'Syma S026G') {
         document.body.style.backgroundImage = "url('img/ch47f.png')";
-        if (copterType != copter026) {
-            copterType = copter026;
-            maxYaw = maxYaw026;
-            maxPitch = maxPitch026;
-            maxTrim = maxTrim026;
-            stepYaw = stepYaw026;      
-            stepPitch = stepPitch026;
-            stepTrim = stepTrim026;
-        }
+        copterType = copter026;
+        maxYaw = maxYaw026;
+        maxPitch = maxPitch026;
+        maxTrim = maxTrim026;
+        stepYaw = stepYaw026;      
+        stepPitch = stepPitch026;
+        stepTrim = stepTrim026;        
     }
 
     halfYaw = (maxYaw - 1) / 2;
@@ -382,76 +380,48 @@ function copterChange(value) {
     setPitch = halfPitch;
     setTrim = halfTrim;
     setButt = 0;
+
+    document.getElementById('maxpitch').innerHTML = maxPitch;
+    document.getElementById('maxyaw').innerHTML = maxYaw;
+
     document.getElementById('throttle').value = setThrottle;
     gaugeUpdate();
-    sendToBLE();
 
-/*
-    getComputedStyle(document.documentElement).getPropertyValue('--my-variable-name');
-    document.documentElement.style.setProperty('--my-variable-name', 'pink');
-*/
+    sendToBLE();
 }
 
 
 function handleCharacteristicValueChanged(event) {
     let value = new TextDecoder().decode(event.target.value);
-    writeToScreen('rec: ' + value);
+    //writeToScreen('rec: ' + value);
 
     var rThrottle = 0;
     var rYaw = 0;
     var rPitch = 0;
-    var rTrim = 0;
     var rButt = 0;
-    var rBattery
+    var rBattery = 0;
+    var rType = '';
 
     if (value.length >= 19) {
-        var psum = value.substr(15, 19);
-        var isum = 0;
-        
-        var ptype = parseInt(value.substr(0, 3));
-        if (ptype === 107) {
-            rThrottle = parseInt(value.substr(3, 6));
-            rYaw = parseInt(value.substr(6, 9));
+        rType = parseInt(value.substr(0, 3));
+        rThrottle = parseInt(value.substr(3, 6));
+        rYaw = parseInt(value.substr(6, 9));
+        if (rType === 107) {
             rPitch = parseInt(value.substr(9, 12));
-            rTrim = parseInt(value.substr(12, 15));
         }
-        else if (ptype === 026) {
-            rThrottle = parseInt(value.substr(3, 6));
-            rYaw = parseInt(value.substr(6, 9));
+        else if (rType === 26) {
             rPitch = parseInt(value.substr(9, 11));
             rButt = parseInt(value.substr(11, 12));
-            rTrim = parseInt(value.substr(12, 15));
         }
-        else if (ptype === 999) {
-            rBattery = parseInt(value.substr(3, 7));
-            rThrottle = 0;
-            rYaw = 0;
-            rPitch = 0;
-            rTrim = 0;
-        }
-        else {
-            isum = -1;
-        }
+        rBattery = parseInt(value.substr(12, 15));
 
-        if (isum === 0) {
-            var isum1 = ptype +  rBattery + rThrottle + rYaw + rPitch + rTrim + rButt;
-            var sSum = isum1.toString;
-            if (psum === sSum.substr(sSum.length -4, sSum.length)) {
-                if (ptype === '999') {
-                    statBattery = rBattery;
-                    meterb.setAttribute('value', (statBattery / 102.4).toString);
-                }
-                else {
-                    statThrottle = rThrottle;
-                    statYaw = rYaw;
-                    statPitch = rPitch;
-                    statTrim = rTrim;
-                    statButt = rButt;
-                }
-
-            }
+        var psum = value.substr(15, 19);
+        var isum = rType + rThrottle + rYaw + rPitch + rButt +  rBattery;
+        if (isum == psum) {
+            var batt_meter = document.getElementById('battery');
+            batt_meter.value = rBattery * kBattery;
         }
-
+        // на каждый принятый пакет отвечаем текущими параметрами
         sendToBLE();
     }
 }
@@ -485,6 +455,7 @@ function writeToCharacteristic(characteristic, data) {
     characteristic.writeValue(new TextEncoder().encode(data));
 }
 
+
 const scrLen = 10;
 function writeToScreen(message) {
     //var outputEl = document.getElementById('diagmsg');
@@ -511,26 +482,38 @@ function cleanScreen() {
 //function sendToBLE(token, newcmd, par1, devnum) {
 function sendToBLE() {
 
-    var st = '---';
+    var st = '-';
+    var is = 0;
+    var ss = '';
+
     if ((copterType === '107') || (copterType === '111')) {
-        var is = 107 + setThrottle + setYaw + setPitch + setTrim;
-        var ss = ('000' + is).slice(-4);
-        //var s4 = ss.slice(-4);
+        is = 107 + setThrottle + setYaw + setPitch + setTrim;
+        ss = ('000' + is).slice(-4);        
         st = copterType + ('000' + setThrottle).slice(-3) +
             ('000' + setYaw).slice(-3) +
             ('000' + setPitch).slice(-3) +
             ('000' + setTrim).slice(-3) + ss;
+    } else if (copterType === '026') {
+        is = 26 + setThrottle + setYaw + setPitch  + setButt + setTrim;
+        ss = ('000' + is).slice(-4);        
+        st = copterType + ('000' + setThrottle).slice(-3) +
+            ('000' + setYaw).slice(-3) +
+            ('00' + setPitch).slice(-2) +
+            ('0' + setButt).slice(-1) +
+            ('000' + setTrim).slice(-3) + ss;
     }
 
-    if (st !== '---') {
+    if (st !== '-') {
         doSend(st + '\n');
         console.log('Send: ' + st);
     }    
-
-    return true;
 };
 
-gaugeUpdate();
+
+/* ==================== JoyStick Yaw & Pitch ==================== */
+// предыдущее касание - расстояния от центра
+var joyX = 0;
+var joyY = 0;
 
 var joystickYawPitch = nipplejs.create({
     zone: document.getElementById('pitchyaw'),
@@ -541,6 +524,7 @@ var joystickYawPitch = nipplejs.create({
     size: joystickSize
 });
 
+/*
 joystickYawPitch.on('move', function (evt, nipple) {
 
     var ndir = nipple.angle.radian;
@@ -597,6 +581,66 @@ joystickYawPitch.on('move', function (evt, nipple) {
     }
 
     if (flMove) {
+        gaugeUpdate();
+        sendToBLE();
+    }
+});
+*/
+joystickYawPitch.on('move', function (evt, nipple) {
+
+    // x, y - px, integer 
+    var x = nipple.position.x - nipple.instance.position.x; // > 0 - yaw вправо
+    var y = nipple.position.y - nipple.instance.position.y; // > 0 = pitch назад
+
+    var flMove = false;
+
+    if (Math.abs(x) <= deadZone) {
+        x = 0;
+    } else {
+        if (x > 0) {
+            x = x - deadZone;
+        } else {
+            x = x + deadZone;
+        }
+        flMove = true;
+    }
+
+    if (Math.abs(y) <= deadZone) {
+        y = 0;
+    } else {
+        if (y > 0) {
+            y = y - deadZone;
+        } else {
+            y = y + deadZone;
+        }
+        flMove = true;
+    }
+
+    if (flMove) {
+        flMove = false;
+        if ( (joyY !== y) || (joyX !== x) ) {   // было смещение
+            flMove = true;
+            setPitch = halfPitch - Math.round(y * stepPitch);  // > 0 - назад
+            if (setPitch > maxPitch) {
+                setPitch = maxPitch;
+            } else if (setPitch < 0) {
+                setPitch = 0;
+            }
+            joyY = y;
+
+            setYaw = halfYaw + Math.round(x * stepYaw);     // > 0 - вправо
+            if (setYaw > maxYaw) {
+                setYaw = maxYaw;
+            } else if (setYaw < 0) {
+                setYaw = 0;
+            }
+            joyX = x;            
+        }
+        
+    }
+
+    if (flMove) {
+        console.log('x=' + x + ' pitch=' + setPitch + ' y=' + y + ' yaw=' + setYaw);
         gaugeUpdate();
         sendToBLE();
     }

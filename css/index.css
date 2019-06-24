@@ -15,25 +15,8 @@ html, body {
     /*height: 100vh;
 */ 
 }
-/*
-#bg {
-  position: fixed; 
-  top: -50%; 
-  left: -50%; 
-  width: 200%; 
-  height: 200%;
-}
-#bg img {
-  position: absolute; 
-  top: 0; 
-  left: 0; 
-  right: 0; 
-  bottom: 0; 
-  margin: auto; 
-  min-width: 50%;
-  min-height: 50%;
-}
-*/
+
+
 body {
   background: url(../img/cockpit1024.jpg) no-repeat center center fixed;
   background-size: cover;
@@ -41,37 +24,24 @@ body {
   overflow: hidden;
 }
 
-/*
-body {
-    background-color: skyblue;
-    background-size: initial;
-    background-image : url('../img/cockpit1024x540.jpg');
-    background-repeat: no-repeat;
-    background-position: center top;
+.noselect {
+    -webkit-touch-callout: none;/* iOS Safari */
+    -webkit-user-select: none;  /* Safari */
+    -moz-user-select: none;     /* Firefox */
+    -ms-user-select: none;      /* Internet Explorer/Edge */
+    user-select: none;          /* Non-prefixed version, currently
+                                    supported by Chrome and Opera */
 }
-*/
-/*
-:root {
-  --left-border: calc((100vw - 1024px) / 2);
-  --half-width: calc(10vw / 2);
-}
-
-
-#head2 {
-    height: 50px;
-    float: center;
-}
-*/
 
 #butt_block {
-    background: rgba(255, 255, 255, 0.1);
+    background: rgba(255, 255, 255, 0);
     width: 96vw;
     height: 3rem;
     margin: auto;
 }
 
 
-/* -------------------- Select Box Styles: stackoverflow.com Method */
+/* ======================= Select Box ============================ */
 /* -------------------- Source: http://stackoverflow.com/a/5809186 */
 select#soflow, select#soflow-color {
    -webkit-appearance: button;
@@ -102,7 +72,7 @@ select#soflow-color {
    padding-left: 0.5rem;
 }
 
-/* ---- toggle switch */
+/* =================== toggle switch ====================== */
 #togglesw {
   /* opacity 0 so that it can be read by screen readers */
   opacity: 0;
@@ -140,12 +110,8 @@ select#soflow-color {
 #togglesw:empty {
     display: none;
 }
-/*
-#dist_block {
-    padding-top: 5px;
-}
-*/
 
+/* ======================================== */
 #battery {
     transform: rotate(180deg);
     width: 10rem;
@@ -153,7 +119,7 @@ select#soflow-color {
     margin-left: 5.75rem;
 }
 
-
+/* ========================================= */
 #control-container {
     position: absolute;
     top: 15.5rem;
@@ -166,6 +132,7 @@ select#soflow-color {
 }
 
 
+/* ========================================== */
 .gauge {
     position: relative;
 }
@@ -321,7 +288,7 @@ select#soflow-color {
     padding-left: 0.5rem;
 }
 
-/* slider - Throttle 
+/* ==================== slider - Throttle ====================== 
   https://code.i-harness.com/ru/docs/html/element/input/range
 */
 .slider-wrapper input {
@@ -365,13 +332,13 @@ input[type=range].range-styled::-webkit-slider-thumb:active {
     margin-top: -2rem;
 }
 
-/* joystick zone */
+/* ================== joystick zone ==================== */
 .zone {
   display: none;
   position: absolute;
-  width: 40%;
-  height: 18rem;
-  top: 2rem;
+  width: 50%;
+  height: 90%;
+  top: 10%;
   right: 0;
 }
 .zone.active {
