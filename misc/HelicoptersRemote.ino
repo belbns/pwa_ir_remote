@@ -43,7 +43,8 @@
   Y - Yaw 0-127, (0=left, 63=center, 127=right)
   P - Pitch 0-127, (0=backwards, 63=hold, 127=forward)
   T - Throttle 0-127, (63=50%, 127=100%)
-
+  A - Trim
+  
   Timings:
   HH - Header:
       2ms HIGH
@@ -54,15 +55,26 @@
   F - Footer:
       312us HIGH
 
-  Формат пакета к S026:
+  Формат пакета к S026 - вариант 1:
      0     6 7    12 13  16 17  20 21   26
   HH TTTTTTT YYYYYY   BBBB   PPPP   MMMMM  F
+  T - Throttle 0-127, (63=50%, 127=100%)
   Y - Yaw 0-63, (0=left, 31=center, 63=right)
   P - Pitch 0-16, (0=backwards, 7=hold, 15=forward)
-  T - Throttle 0-127, (63=50%, 127=100%)
   B - buttons 22-LEFT, 26-RIGHT
   M - TRIM 0-31
-    
+
+  Формат пакета к S026 - вариант 2:
+  https://www.rcgroups.com/forums/showpost.php?p=15007427&postcount=47
+     0     6 7    12 13 14 15 16 17 20 21  26 27
+  HH TTTTTTT YYYYYY  С1 LB RB C2  PPPP MMMMMM  0 F
+  T - Throttle 0-127, (63=50%, 127=100%)
+  Y - Yaw 0-63, (111111=left, 100000=neutral, 000001=right)
+  P - Pitch 0-15, (0001=backwards, 1000=neutral, 1111=forward)
+  LB, RB - trim buttons
+  C1,C2 - channel (A=0,1 B=1,1 C=0,0)
+  M - TRIM 0-63, (111111=left, 100000=neutral, 000001=right
+  27 - always 0
 ********************************************************* */
  
 #include <TimerOne.h>
@@ -82,7 +94,18 @@
 #define PITCH_107 128
 #define PITCH_026 16
 #define TRIM_107  128
-#define TRIM_026  32
+#define TRIM_026  64  //V1 - 32
+#define CH_107    0   // A
+//#define CH_107    1   // B
+// канал A
+#define CH1_026 0
+#define CH2_026 1
+// канал B
+//#define CH1_026 1
+//#define CH2_026 1
+// канал C
+//#define CH1_026 0
+//#define CH2_026 0
 
 // Начальные значения параметров
 int copter = 1;       // Тип: 1 - S111/107, 0 - S026
@@ -112,7 +135,7 @@ void sendCommand(uint8_t ya, uint8_t pit, uint8_t thr, uint8_t tri) {
     uint8_t data[4];
     data[3] = ya;
     data[2] = pit;
-    data[1] = thr;    // | 0x80; // | (channel << 7);
+    data[1] = thr | (CH_107 << 7);
     data[0] = tri;
 
     // SEND HEADER
@@ -139,6 +162,7 @@ void sendCommand(uint8_t ya, uint8_t pit, uint8_t thr, uint8_t tri) {
     SET_LOW_FINAL();
 }
 
+/*
 // Отправка команды на  Syma S026
 void sendCommand026(uint8_t ya, uint8_t pit, uint8_t thr, uint8_t tri, uint8_t butt) {
     uint8_t data[5];
@@ -161,6 +185,7 @@ void sendCommand026(uint8_t ya, uint8_t pit, uint8_t thr, uint8_t tri, uint8_t b
             SET_HIGH(300);
             SET_LOW(900);
         }
+        data[0] = data[0] << 1;
     }
 
     for (uint8_t i = 0; i < 6; i++) { // Yaw - 6bit, MSB first
@@ -172,6 +197,7 @@ void sendCommand026(uint8_t ya, uint8_t pit, uint8_t thr, uint8_t tri, uint8_t b
             SET_HIGH(300);
             SET_LOW(900);
         }
+        data[1] = data[1] << 1;
     }
 
     for (uint8_t i = 0; i < 4; i++) { // Buttons - 4bit, MSB first
@@ -183,6 +209,7 @@ void sendCommand026(uint8_t ya, uint8_t pit, uint8_t thr, uint8_t tri, uint8_t b
             SET_HIGH(300);
             SET_LOW(900);
         }
+        data[2] = data[2] << 1;
     }
 
     for (uint8_t i = 0; i < 4; i++) { // Pitch - 4bit, MSB first
@@ -194,6 +221,7 @@ void sendCommand026(uint8_t ya, uint8_t pit, uint8_t thr, uint8_t tri, uint8_t b
             SET_HIGH(300);
             SET_LOW(900);
         }
+        data[3] = data[3] << 1;
     }
 
     for (uint8_t i = 0; i < 5; i++) { // Trim - 5bit, MSB first
@@ -205,6 +233,85 @@ void sendCommand026(uint8_t ya, uint8_t pit, uint8_t thr, uint8_t tri, uint8_t b
             SET_HIGH(300);
             SET_LOW(900);
         }
+        data[4] = data[4] << 1;
+    }
+
+    // SEND FOOTER
+    SET_HIGH(300);
+    // LOW till the next interrupt kicks in
+    SET_LOW_FINAL();
+}
+*/
+
+// Отправка команды на  Syma S026 - вариант 2
+void sendCommand026(uint8_t ya, uint8_t pit, uint8_t thr, uint8_t tri, uint8_t butt) {
+    uint8_t thr_data = thr << 1;    // 7..1 - throttle
+    uint8_t yaw_data = ya << 2;     // 7..2 - yaw
+    uint8_t pitch_data = pit;       // 3..0 - pitch
+    pitch_data |= (CH2_026 << 4);   // CH2
+    if (butt & 2) {
+        pitch_data |= 0x20;         // right button
+    }
+    if (butt & 1) {
+        pitch_data |= 0x40;         // left button
+    }
+    pitch_data |= (CH1_026 << 7);   // CH1    
+    uint8_t trim_data = tri;         
+    trim_data = trim_data << 1;     // 6..1 - trim, 0
+    
+    // SEND HEADER
+    SET_HIGH(2000);
+    SET_LOW(2000);
+    // SEND DATA - MSB first для всех, передача с 7-го бита
+    // Throttle - 7 бит
+    for (uint8_t i = 0; i < 7; i++) {
+        if (thr_data & 0x80) {  // 1
+            SET_HIGH(300);
+            SET_LOW(900);
+        }
+        else {                  // 0
+            SET_HIGH(300);
+            SET_LOW(500);
+        }
+        thr_data = thr_data << 1;
+    }
+    // Yaw - 6 бит 
+    for (uint8_t i = 0; i < 6; i++) {
+        if (yaw_data & 0x80) {  // 1
+            SET_HIGH(300);
+            SET_LOW(900);
+        }
+        else {                  // 0
+            SET_HIGH(300);
+            SET_LOW(500);
+        }
+        yaw_data = yaw_data << 1;
+
+    }
+    // Pitch, CH2, RB, LB, CH1 - 8 бит
+    for (uint8_t i = 0; i < 8; i++) {
+        if (pitch_data & 0x80) {  // 1
+            SET_HIGH(300);
+            SET_LOW(900);
+        }
+        else {                    // 0
+            SET_HIGH(300);
+            SET_LOW(500);
+        }
+        pitch_data = pitch_data << 1;
+
+    }
+    // Trim + 0 - 7 бит
+    for (uint8_t i = 0; i < 7; i++) {
+        if (trim_data & 0x80) {  // 1
+            SET_HIGH(300);
+            SET_LOW(900);
+        }
+        else {                        // 0
+            SET_HIGH(300);
+            SET_LOW(500);
+        }
+        trim_data = trim_data << 1;
     }
 
     // SEND FOOTER
@@ -345,8 +452,8 @@ void loop() {
             if ((ch != '\n') && (icmd < 20)) {
                 stcmd[icmd++] = ch;
             } else {
-                Serial.print("rec: ");
-                Serial.println(stcmd);
+                //Serial.print("rec: ");
+                //Serial.println(stcmd);
                 if (icmd >= 19) {  // нормальный пакет
                     strncpy(val, &stcmd[0], 3);
                     val[3] = '\0';

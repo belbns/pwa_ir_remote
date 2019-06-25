@@ -18,9 +18,9 @@
     HHH = 026
     TTT - Throttle          0..127
     YYY - Yaw               0..63
-    PP  - Pitch             0..16
-    B   - Buttons           0..2
-    MMM - Trim              0..31
+    PP  - Pitch             0..15
+    B   - Buttons           0..3
+    MMM - Trim              0..63   // 0..31
     SSSS - контрольная сумма HHH + TTT + YYY + PP + B + MMM
 
     Пакет от Ардуино:
@@ -57,10 +57,10 @@ const stepTrim107 = 1;
 
 const maxYaw026 = 63;
 const maxPitch026 = 15;
-const maxTrim026 = 31;
+const maxTrim026 = 63;
 const stepYaw026 = 0.5;
 const stepPitch026 = 0.125;
-const stepTrim026 = 0.25;
+const stepTrim026 = 0.5;
 
 const copter107 = '107';
 const copter026 = '026';
@@ -88,6 +88,11 @@ var setPitch = halfPitch;
 var setTrim = halfTrim;
 var setButt = 0;
 
+var statThrottle = 0;
+var statYaw = 0;
+var statPitch = 0;
+var statTrim = 0;
+var statButt = 0;
 
 /*
 var storage = window.localStorage;
@@ -306,11 +311,7 @@ var gaugeya = new Gauge(document.getElementById("gaugeya"));
 var gaugeth = new Gauge(document.getElementById("gaugeth"));
 
 function gaugeUpdate() {
-/*
-    gaugepi.value(setPitch / maxPitch);
-    gaugeya.value(setYaw / maxYaw);
-    gaugeth.value(setThrottle / maxThrottle);
-*/
+
     var tt = setPitch / (maxPitch - 1);
     if (tt > 1) {
         tt = 1;
@@ -323,9 +324,12 @@ function gaugeUpdate() {
     gaugeya.value(tt);
     gaugeth.value(setThrottle / maxThrottle);
 
-    document.getElementById('lthrottle').innerHTML = 'Throttle: ' + setThrottle;
-    document.getElementById('lpitch').innerHTML = 'Pitch: ' + (setPitch);
-    document.getElementById('lyaw').innerHTML = 'Yaw: ' + (setYaw);
+    document.getElementById('lthrottle').innerHTML = 
+            'Throttle:<br>' + setThrottle + '<br>(' + statThrottle + ')';
+    document.getElementById('lpitch').innerHTML = 
+            'Pitch:<br>' + setPitch + '<br>(' + statPitch + ')';
+    document.getElementById('lyaw').innerHTML = 
+            'Yaw:<br>' + setYaw + '<br>(' + statYaw + ')';
 };
 
 gaugeUpdate();
@@ -401,35 +405,29 @@ function handleCharacteristicValueChanged(event) {
     let value = new TextDecoder().decode(event.target.value);
     //writeToScreen('rec: ' + value);
 
-    var rThrottle = 0;
-    var rYaw = 0;
-    var rPitch = 0;
-    var rButt = 0;
-    var rBattery = 0;
-    var rType = '';
 
-    if (value.length >= 19) {
-        rType = parseInt(value.substr(0, 3));
-        rThrottle = parseInt(value.substr(3, 6));
-        rYaw = parseInt(value.substr(6, 9));
-        if (rType === 107) {
-            rPitch = parseInt(value.substr(9, 12));
-        }
-        else if (rType === 26) {
-            rPitch = parseInt(value.substr(9, 11));
-            rButt = parseInt(value.substr(11, 12));
-        }
-        rBattery = parseInt(value.substr(12, 15));
-
-        var psum = value.substr(15, 19);
-        var isum = rType + rThrottle + rYaw + rPitch + rButt +  rBattery;
-        if (isum == psum) {
-            var batt_meter = document.getElementById('battery');
-            batt_meter.value = rBattery * kBattery;
-        }
-        // на каждый принятый пакет отвечаем текущими параметрами
-        sendToBLE();
+    var rType = parseInt(value.substring(0, 3));
+    statThrottle = parseInt(value.substring(3, 6));
+    statYaw = parseInt(value.substring(6, 9));
+    if (rType === 107) {
+        statPitch = parseInt(value.substring(9, 12));
+        statButt = 0;
     }
+    else if (rType === 26) {
+        statPitch = parseInt(value.substring(9, 11));
+        statButt = parseInt(value.substring(11, 12));
+    }
+    var rBattery = parseInt(value.substring(12, 15));
+
+    var psum = value.substring(15, 19);
+    var isum = rType + statThrottle + statYaw + statPitch + statButt + rBattery;
+    if (isum == psum) {
+        document.getElementById('battery').value = rBattery * kBattery;
+        gaugeUpdate();
+    }
+    
+    // на каждый принятый пакет отвечаем текущими параметрами
+    sendToBLE();
 }
 
 function crtrl_on(sw) {
@@ -437,14 +435,18 @@ function crtrl_on(sw) {
     copterChange(document.getElementById('soflow-color').value);
     if (sw.checked) {
         // connect to BLE
-        connect();
+        //connect();
         ctrlFlag = true;
     }
     else {
         sendToBLE();
-        disconnect();
+        //disconnect();
         ctrlFlag = false;
     }
+
+/*
+    document.getElementById('battery').value = Math.round(Math.random() * 999) * kBattery;
+*/
 }
 
 
