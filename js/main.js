@@ -435,12 +435,12 @@ function crtrl_on(sw) {
     copterChange(document.getElementById('soflow-color').value);
     if (sw.checked) {
         // connect to BLE
-        //connect();
+        connect();
         ctrlFlag = true;
     }
     else {
         sendToBLE();
-        //disconnect();
+        disconnect();
         ctrlFlag = false;
     }
 
