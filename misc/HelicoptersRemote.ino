@@ -86,6 +86,12 @@
 #define SET_LOW(t)     TCCR2A &= ~_BV(COM2B1); delayMicroseconds(t)
 
 #define SET_LOW_FINAL()   TCCR2A &= ~_BV(COM2B1)
+// длина ИК пакетов в интервалах
+#define LEN107    67
+#define LEN026    59
+
+#define COPT107   1
+#define COPT026   0
 
 #define THR_107   128
 #define THR_026   128
@@ -98,7 +104,7 @@
 #define CH_107    0   // A
 //#define CH_107    1   // B
 // канал A
-#define CH1_026 0
+#define CH1_026 1
 #define CH2_026 1
 // канал B
 //#define CH1_026 1
@@ -107,8 +113,16 @@
 //#define CH1_026 0
 //#define CH2_026 0
 
+#define AFTER_COUNT 11  // 22 раза послать стоп после обнуления Throttle ~ 4 сек.
+
+struct ir_piece {
+  bool high;
+  unsigned int tm;
+};
+
 // Начальные значения параметров
-int copter = 1;       // Тип: 1 - S111/107, 0 - S026
+uint8_t copter = COPT107;       // Тип: 1 - S111/107, 0 - S026
+
 uint8_t Throttle = 0;
 uint8_t YawHalf = 63;
 uint8_t Yaw = YawHalf;
@@ -123,14 +137,19 @@ uint8_t YawMax = YAW_107 - 1;
 uint8_t PitchMax = PITCH_107 - 1;
 uint8_t TrimMax = TRIM_107 - 1;
 
+uint8_t after_count = 0; // до запуска ничего не посылаем
+
+uint8_t pack_len = LEN107;
+
 // D7 - кнопка аварийного сброса
 int buttReset = 7;
 // D12 - вход индикации установленного соединения
 // от HM-10: HIGH - connected, LOW - disconnected
 int pinConnected = 12;
 
+ir_piece ir_cmd[100];
 
-// Отправка команды на Syma S107G/S111G
+/* Отправка команды на Syma S107G/S111G
 void sendCommand(uint8_t ya, uint8_t pit, uint8_t thr, uint8_t tri) {
     uint8_t data[4];
     data[3] = ya;
@@ -161,6 +180,7 @@ void sendCommand(uint8_t ya, uint8_t pit, uint8_t thr, uint8_t tri) {
     // LOW till the next interrupt kicks in
     SET_LOW_FINAL();
 }
+*/
 
 /*
 // Отправка команды на  Syma S026
@@ -243,86 +263,261 @@ void sendCommand026(uint8_t ya, uint8_t pit, uint8_t thr, uint8_t tri, uint8_t b
 }
 */
 
-// Отправка команды на  Syma S026 - вариант 2
-void sendCommand026(uint8_t ya, uint8_t pit, uint8_t thr, uint8_t tri, uint8_t butt) {
+/* Отправка команды на  Syma S026 - вариант 2
+void sendCommand026(uint8_t ya, uint8_t pit, uint8_t thr, uint8_t tri) {
     uint8_t thr_data = thr << 1;    // 7..1 - throttle
     uint8_t yaw_data = ya << 2;     // 7..2 - yaw
     uint8_t pitch_data = pit;       // 3..0 - pitch
+    pitch_data |= (CH1_026 << 7);   // CH1
     pitch_data |= (CH2_026 << 4);   // CH2
-    if (butt & 2) {
-        pitch_data |= 0x20;         // right button
-    }
-    if (butt & 1) {
-        pitch_data |= 0x40;         // left button
-    }
-    pitch_data |= (CH1_026 << 7);   // CH1    
-    uint8_t trim_data = tri;         
-    trim_data = trim_data << 1;     // 6..1 - trim, 0
+    pitch_data |= 0x60;             // LB, RB ???
+
+    uint8_t trim_data = tri << 2;     // 7..2 - trim, 00
     
     // SEND HEADER
-    SET_HIGH(2000);
-    SET_LOW(2000);
+    SET_HIGH(470);
+    SET_LOW(350);
+    SET_HIGH(1700);
     // SEND DATA - MSB first для всех, передача с 7-го бита
     // Throttle - 7 бит
     for (uint8_t i = 0; i < 7; i++) {
+        SET_LOW(350);
         if (thr_data & 0x80) {  // 1
-            SET_HIGH(300);
-            SET_LOW(900);
+            SET_HIGH(880);
         }
         else {                  // 0
-            SET_HIGH(300);
-            SET_LOW(500);
+            SET_HIGH(460);
         }
         thr_data = thr_data << 1;
     }
     // Yaw - 6 бит 
     for (uint8_t i = 0; i < 6; i++) {
+        SET_LOW(350);
         if (yaw_data & 0x80) {  // 1
-            SET_HIGH(300);
-            SET_LOW(900);
+            SET_HIGH(880);
         }
         else {                  // 0
-            SET_HIGH(300);
-            SET_LOW(500);
+            SET_HIGH(460);
         }
         yaw_data = yaw_data << 1;
 
     }
     // Pitch, CH2, RB, LB, CH1 - 8 бит
     for (uint8_t i = 0; i < 8; i++) {
+        SET_LOW(350);
         if (pitch_data & 0x80) {  // 1
-            SET_HIGH(300);
-            SET_LOW(900);
+            SET_HIGH(880);
         }
         else {                    // 0
-            SET_HIGH(300);
-            SET_LOW(500);
+            SET_HIGH(460);
         }
         pitch_data = pitch_data << 1;
 
     }
     // Trim + 0 - 7 бит
     for (uint8_t i = 0; i < 7; i++) {
+        SET_LOW(350);
         if (trim_data & 0x80) {  // 1
-            SET_HIGH(300);
-            SET_LOW(900);
+            SET_HIGH(880);
         }
         else {                        // 0
-            SET_HIGH(300);
-            SET_LOW(500);
+            SET_HIGH(460);
         }
         trim_data = trim_data << 1;
     }
 
     // SEND FOOTER
-    SET_HIGH(300);
+    //SET_HIGH(2700);
     // LOW till the next interrupt kicks in
     SET_LOW_FINAL();
+}
+*/
+
+void sendCommand(void) {
+  for (uint8_t i = 0; i < pack_len; i++) {
+    if (ir_cmd[i].high) {
+      SET_HIGH(ir_cmd[i].tm);  
+    } else {
+      SET_LOW(ir_cmd[i].tm);
+    }
+  }
+  SET_LOW_FINAL();
+}
+
+void setCommand(void) {
+
+  uint8_t cnt = 0;
+  uint8_t tmp = 0;
+  
+  if (copter == COPT026) { // 026
+    
+    ir_cmd[0].high = true;
+    ir_cmd[0].tm = 470;
+    
+    ir_cmd[1].high = false;
+    ir_cmd[1].tm = 350;
+    
+    ir_cmd[2].high = true;
+    ir_cmd[2].tm = 1700;
+
+    uint8_t cnt = 3;
+    uint8_t tmp = Throttle << 1;
+    // 7..1 - throttle
+    for (uint8_t i = 0; i < 7; i++) {
+        ir_cmd[cnt].high = false;
+        ir_cmd[cnt].tm = 350;
+        cnt++;
+        ir_cmd[cnt].high = true;
+        if (tmp & 0x80) {  // 1
+          ir_cmd[cnt].tm = 880;
+        }
+        else {                  // 0
+          ir_cmd[cnt].tm = 460;
+        }
+        tmp = tmp << 1;
+        cnt++;
+    }
+
+    // Yaw - 6 бит
+    tmp = Yaw << 2; 
+    for (uint8_t i = 0; i < 6; i++) {
+        ir_cmd[cnt].high = false;
+        ir_cmd[cnt].tm = 350;
+        cnt++;
+        ir_cmd[cnt].high = true;
+        if (tmp & 0x80) {  // 1
+          ir_cmd[cnt].tm = 880;
+        }
+        else {                  // 0
+          ir_cmd[cnt].tm = 460;
+        }
+        tmp = tmp << 1;
+        cnt++;
+    }
+    
+    tmp = Pitch;       // 3..0 - pitch
+    tmp |= (CH1_026 << 7);   // CH1
+    tmp |= (CH2_026 << 4);   // CH2
+    tmp |= 0x60;             // LB, RB ???
+
+    for (uint8_t i = 0; i < 8; i++) {
+        ir_cmd[cnt].high = false;
+        ir_cmd[cnt].tm = 350;
+        cnt++;
+        ir_cmd[cnt].high = true;
+        if (tmp & 0x80) {  // 1
+          ir_cmd[cnt].tm = 880;
+        }
+        else {                  // 0
+          ir_cmd[cnt].tm = 460;
+        }
+        tmp = tmp << 1;
+        cnt++;
+    }
+
+    //Trim + 0
+    tmp = Trim << 2;
+    for (uint8_t i = 0; i < 7; i++) {
+        ir_cmd[cnt].high = false;
+        ir_cmd[cnt].tm = 350;
+        cnt++;
+        ir_cmd[cnt].high = true;
+        if (tmp & 0x80) {  // 1
+          ir_cmd[cnt].tm = 880;
+        }
+        else {                  // 0
+          ir_cmd[cnt].tm = 460;
+        }
+        tmp = tmp << 1;
+        cnt++;
+    }
+    
+  } else {  // COPT107
+
+    ir_cmd[0].high = true;
+    ir_cmd[0].tm = 2000;
+    ir_cmd[1].high = false;
+    ir_cmd[1].tm = 2000;
+    
+    cnt = 2;
+    tmp = Yaw & 0x7F;
+    for (uint8_t i = 0; i < 8; i++) {
+        ir_cmd[cnt].high = true;
+        ir_cmd[cnt].tm = 312;
+        cnt++;
+        ir_cmd[cnt].high = false;
+        if (tmp & 0x80) {  // 1
+          ir_cmd[cnt].tm = 688;
+        }
+        else {                  // 0
+          ir_cmd[cnt].tm = 288;
+        }
+        tmp = tmp << 1;
+        cnt++;
+    }
+
+    tmp = Pitch & 0x7F;
+    for (uint8_t i = 0; i < 8; i++) {
+        ir_cmd[cnt].high = true;
+        ir_cmd[cnt].tm = 312;
+        cnt++;
+        ir_cmd[cnt].high = false;
+        if (tmp & 0x80) {  // 1
+          ir_cmd[cnt].tm = 688;
+        }
+        else {                  // 0
+          ir_cmd[cnt].tm = 288;
+        }
+        tmp = tmp << 1;
+        cnt++;
+    }
+
+    tmp = Throttle | (CH_107 << 7);
+    for (uint8_t i = 0; i < 8; i++) {
+        ir_cmd[cnt].high = true;
+        ir_cmd[cnt].tm = 312;
+        cnt++;
+        ir_cmd[cnt].high = false;
+        if (tmp & 0x80) {  // 1
+          ir_cmd[cnt].tm = 688;
+        }
+        else {                  // 0
+          ir_cmd[cnt].tm = 288;
+        }
+        tmp = tmp << 1;
+        cnt++;
+    }
+
+    tmp = Trim & 0x7F;
+    for (uint8_t i = 0; i < 8; i++) {
+        ir_cmd[cnt].high = true;
+        ir_cmd[cnt].tm = 312;
+        cnt++;
+        ir_cmd[cnt].high = false;
+        if (tmp & 0x80) {  // 1
+          ir_cmd[cnt].tm = 688;
+        }
+        else {                  // 0
+          ir_cmd[cnt].tm = 288;
+        }
+        tmp = tmp << 1;
+        cnt++;
+    }
+    
+    // SEND FOOTER
+    ir_cmd[cnt].high = true;
+    ir_cmd[cnt].tm = 312;
+    cnt++;    
+  }
+
+  ir_cmd[cnt].high = false;
+  ir_cmd[cnt].tm = 8000;
+
 }
 
 #define battPin A0  // вход измерения напряжения батареи
 
-char pack[24];
+char pack[64];
 
 void sendState(void) {
 
@@ -332,7 +527,7 @@ void sendState(void) {
     }
 
     int h = 0;
-    if (copter == 0) {  // S026
+    if (copter == COPT026) {  // S026
         h = 26;
         sprintf(pack, "%03d%03d%03d%02d%1d%3d%04d\n", h, Throttle, Yaw, Pitch, butt026, batt,
           (h + Throttle + Yaw + Pitch + butt026 + batt));
@@ -348,37 +543,53 @@ void sendState(void) {
 
 // Отправка команды по прерыванию от таймера - постоянно
 void timerISR() {
-    if (copter == 0) {
-      sendCommand026(Yaw, Pitch, Throttle, Trim, butt026);
-    }
-    else {
-      sendCommand(Yaw, Pitch, Throttle, Trim);
-    }
+    if (after_count > 0) {  // посылаем команды только при наличии управления и 4 сек. после
+      sendCommand();
+      /*
+        if (copter == 0) {
+            sendCommand026(Yaw, Pitch, Throttle, Trim);
+        }
+        else {
+            sendCommand(Yaw, Pitch, Throttle, Trim);
+        }
+      */
+        if (Throttle == 0) {
+            after_count--;
+        }
+    }       
 }
 
 // Смена типа вертолета, используется также для сброса параметров
 void setCopter(uint8_t copt) {
-   if (copt == 0) {
+
+    noInterrupts();
+    after_count = 0;    
+    Throttle = 0;
+
+    if (copt == COPT026) {
         ThrottleMax = THR_026 - 1;       
         YawMax = YAW_026 - 1;
         PitchMax = PITCH_026 - 1;
         TrimMax = TRIM_026 - 1;
+        pack_len = LEN026;
     }
     else {
         ThrottleMax = THR_107 - 1;
         YawMax = YAW_107 - 1;
         PitchMax = PITCH_107 - 1;
         TrimMax = TRIM_107 - 1;      
-    }
-    
+        pack_len = LEN107;
+    }    
     copter = copt;
-    Throttle = 0;
     YawHalf = YawMax / 2;
     Yaw = YawHalf;
     PitchHalf = PitchMax / 2;
     Pitch = PitchHalf;
     TrimHalf = TrimMax / 2;
     Trim = TrimHalf;
+    
+    setCommand();
+    interrupts();
 }
 
 #define STAT_INTERVAL   500   // интервал отправки статуса, mS
@@ -429,15 +640,16 @@ void setup() {
 }
 
 
-char stcmd[24];
+char stcmd[64];
 uint8_t icmd = 0;
 char sttt[64];
 
 void loop() {
 
-    uint16_t hh = 0, thr = 0, ya = 0, pit = 0, tri = 0, bt =  0, pib = 0;
+    uint16_t hh = 0, thr = 0, ya = 0, pit = 0, tri = 0, pib = 0, bt = 0;
     uint16_t sum = 0;
     char val[8];
+    bool set_copt = false;
 
     // Если нет соединения и параметры не соответствуют начальным - сброс
     if (digitalRead(pinConnected) == LOW) {
@@ -470,7 +682,7 @@ void loop() {
                     strncpy(val, &stcmd[9], 3);
                     val[3] = '\0';
                     pib = atoi(val);
-                    if (copter == 0) { // S026
+                    if (hh == 26) { // S026
                         strncpy(val, &stcmd[9], 2);
                         val[2] = '\0';
                         pit = atoi(val);
@@ -492,28 +704,48 @@ void loop() {
                       hh + thr + ya + pit + tri);
                     Serial.print(sttt);
                     */
+                    set_copt = false;
                     // контрольная сумма совпала и тип правильный
-                    if ( (sum == (hh + thr + ya + pib + tri)) &&
+                    if ( (sum == (hh + thr + ya + pit + bt + tri)) &&
                       ((hh == 107) || (hh == 111) || (hh == 26)) ) {
-                        if ( ((hh == 107) || (hh == 111)) && (copter != 1) ) {
-                            copter = 1; // сменился тип вертолета
-                            setCopter(copter);                    
-                        } else if ( (hh == 26) && (copter != 0) ) {
-                            copter = 0; // сменился тип вертолета
-                            setCopter(copter);                    
-                        }                
 
+                        if (hh == 26) {                          
+                          if (copter == COPT107) {
+                            copter = COPT026; // сменился тип вертолета
+                            set_copt = true;
+                          }    
+                        } else {
+                          if (copter == COPT026) {
+                            copter = COPT107; // сменился тип вертолета
+                            set_copt = true;                            
+                          }
+                        }      
+                                  
                         //sprintf(sttt, "New: %d %d %d %d\n", thr, ya, pit, tri);
                         //Serial.print(sttt);
-                        noInterrupts();
-                        Throttle = (uint8_t)thr;
-                        Yaw = (uint8_t)(YawMax - ya);
-                        Pitch = (uint8_t)(PitchMax - pit);
-                        Trim = (uint8_t)(TrimMax - tri);
-                        if (copter == 0) {
-                            butt026 = (uint8_t)bt;
+                        
+                        if (set_copt) { // при смене типа остальные значения игнорируются
+                            setCopter(copter);  
+                        } else {
+                            noInterrupts();
+                            Yaw = (uint8_t)(YawMax - ya);
+                            if (copter == COPT026) {
+                                Pitch = (uint8_t)(pit + 1);
+                                if (Pitch > PitchMax) {
+                                    Pitch = PitchMax;                              
+                                }
+                            } else {
+                                Pitch = (uint8_t)(PitchMax - pit);
+                            }
+                            Trim = (uint8_t)(TrimMax - tri);
+                            Throttle = (uint8_t)thr;
+                            if (Throttle > 0) { // включаем передачу ИК пакетов
+                                after_count = AFTER_COUNT;
+                            }
+                            setCommand();
+                            interrupts();
                         }
-                        interrupts();
+                        
                     }
                 } // нормальный пакет
                                      
