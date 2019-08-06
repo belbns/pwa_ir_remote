@@ -567,7 +567,12 @@ joystickYawPitch.on('move', function (evt, nipple) {
         flMove = false;
         if ( (joyY !== y) || (joyX !== x) ) {   // было смещение
             flMove = true;
-            setPitch = halfPitch - Math.round(y * stepPitch);  // > 0 - назад
+
+            if (copterType === copter026) {
+                setPitch = halfPitch + Math.round(y * stepPitch);  // > 0 - вперед                
+            } else {
+                setPitch = halfPitch - Math.round(y * stepPitch);  // > 0 - назад
+            }
             if (setPitch > maxPitch) {
                 setPitch = maxPitch;
             } else if (setPitch < 0) {
