@@ -72,9 +72,9 @@ var maxYaw = maxYaw107;
 var maxPitch = maxPitch107;
 var maxTrim = maxTrim107;
 
-var halfYaw = (maxYaw + 1) / 2;
-var halfPitch = (maxPitch + 1) / 2;
-var halfTrim = (maxTrim + 1) / 2;
+var halfYaw = (maxYaw - 1) / 2;
+var halfPitch = (maxPitch - 1) / 2;
+var halfTrim = (maxTrim - 1) / 2;
 
 var stepYaw = stepYaw107;      
 var stepPitch = stepPitch107;
@@ -379,9 +379,9 @@ function copterChange(value) {
         stepTrim = stepTrim026;        
     }
 
-    halfYaw = (maxYaw + 1) / 2;
-    halfPitch = (maxPitch + 1) / 2;
-    halfTrim = (maxTrim + 1) / 2;
+    halfYaw = (maxYaw - 1) / 2;
+    halfPitch = (maxPitch - 1) / 2;
+    halfTrim = (maxTrim - 1) / 2;
     
     setThrottle = 0;
     setYaw = halfYaw;
@@ -568,11 +568,7 @@ joystickYawPitch.on('move', function (evt, nipple) {
         if ( (joyY !== y) || (joyX !== x) ) {   // было смещение
             flMove = true;
 
-            if (copterType === copter026) {
-                setPitch = halfPitch + Math.round(y * stepPitch);  // > 0 - вперед                
-            } else {
-                setPitch = halfPitch - Math.round(y * stepPitch);  // > 0 - назад
-            }
+            setPitch = halfPitch - Math.round(y * stepPitch);  // > 0 - назад
             if (setPitch > maxPitch) {
                 setPitch = maxPitch;
             } else if (setPitch < 0) {
