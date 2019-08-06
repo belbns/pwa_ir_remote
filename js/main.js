@@ -63,6 +63,7 @@ const stepPitch026 = 0.125;
 const stepTrim026 = 0.5;
 
 const copter107 = '107';
+const copter111 = '111';
 const copter026 = '026';
 
 var copterType = copter107;
@@ -491,31 +492,31 @@ function cleanScreen() {
 //function sendToBLE(token, newcmd, par1, devnum) {
 function sendToBLE() {
 
-    var st = '-';
+    var st = '';
     var is = 0;
     var ss = '';
 
-    if ((copterType === '107') || (copterType === '111')) {
-        is = 107 + parseInt(setThrottle) + parseInt(setYaw) + parseInt(setPitch) + parseInt(setTrim);
-        ss = ('000' + is).slice(-4);        
-        st = copterType + ('000' + setThrottle).slice(-3) +
+    var ist = parseInt(setThrottle) + parseInt(setYaw) + parseInt(setPitch) + parseInt(setTrim);
+
+    if ((copterType === copter107) || (copterType === copter111)) {
+        is = 107 + ist;
+        st = '107' + ('000' + setThrottle).slice(-3) +
             ('000' + setYaw).slice(-3) +
             ('000' + setPitch).slice(-3) +
-            ('000' + setTrim).slice(-3) + ss;
-    } else if (copterType === '026') {
-        is = 26 + setThrottle + setYaw + setPitch  + setButt + setTrim;
-        ss = ('000' + is).slice(-4);        
-        st = copterType + ('000' + setThrottle).slice(-3) +
+            ('000' + setTrim).slice(-3);
+    } else {
+        is = 26 + ist + parseInt(setButt);
+        st = '026' + ('000' + setThrottle).slice(-3) +
             ('000' + setYaw).slice(-3) +
             ('00' + setPitch).slice(-2) +
             ('0' + setButt).slice(-1) +
-            ('000' + setTrim).slice(-3) + ss;
+            ('000' + setTrim).slice(-3);
     }
+    ss = ('000' + is).slice(-4);        
+    st = st + ss;
 
-    if (st !== '-') {
-        doSend(st + '\n');
-        console.log('Send: ' + st);
-    }    
+    doSend(st + '\n');
+    console.log('Send: ' + st);
 };
 
 
