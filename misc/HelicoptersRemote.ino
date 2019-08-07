@@ -1,44 +1,53 @@
 /*
- * Управление вертолетами Syma S111G(S107G) и S026
- * оригинал: https://github.com/infusion/Fritzing/tree/master/Syma-S107G
+ * Nikolay Belov
+ * 
+ * Idea: https://github.com/infusion/Fritzing/tree/master/Syma-S107G,
+ *       https://www.rcgroups.com/forums/showpost.php?p=15007427&postcount=47
+ *
+ * Arduino based IR transmitter for helicopters Syma S111G(S107G) and S026.
+ * Transmitter receives command packets from smartphone (PWA)
+ * via BLE module HM-10 and send IR packages to helicopters.
+ * 
+ * If connection with BLE is established Arduino send packets to 
+ * remote control via BLE with interval 500 uS.
+ * Remote control must response with control packet. 
+ * If Arduino didn't receive 4 packets in sequence, it interprets it 
+ * as a lost control and resets control parameters.
  *
  ************************************************************************
- Формат пакета от пульта управления для S107G/S111G:
-    HHH TTT YYY PPP MMM SSSS\n
+ Packet from BLE for S107G/S111G:
+ --------------------------------
+    HHH TTT YYY PPP AAA SSSS\n
     HHH = 107
     TTT - Throttle          0..127
     YYY - Yaw               0..127
     PPP - Pitch             0..127
-    MMM - Trim              0..127
-    SSSS - контрольная сумма HHH + TTT + YYY + PPP + MMM
+    AAA - Trim              0..127
+    SSSS - control sum (HHH + TTT + YYY + PPP + AAA)
     
-    для S026:
-    HHH TTT YYY PP B MMM SSSS\n
+ Packet from BLE for S026:
+ -------------------------
+    HHH TTT YYY PP B AAA SSSS\n
     HHH = 026
     TTT - Throttle          0..127
     YYY - Yaw               0..63
     PP  - Pitch             0..16
-    B   - Buttons           0..2
-    MMM - Trim              0..31
-    SSSS - контрольная сумма HHH + TTT + YYY + PP + B + MMM
+    B   - Buttons           0..3
+    AAA - Trim              0..63
+    SSSS - control sum (HHH + TTT + YYY + PP + B + AAA)
 
- Пакет от Ардуино:
-          ----------
-    текущие параметры:
+ Packet from Arduino to BLE:
+ ---------------------------
+    Current values:
     107 TTT YYY PPP VVV SSSS\n - 20 байт
-    или
+    or
     026 TTT YYY PP B VVV SSSS\n
 
-    VVV - напряжение батареи 512 -> 5 вольт, 999 - максимум
-
-    После установления соединения c пультом через BLE
-    Ардуино с интервалом в 500мС посылает пакеты с состоянием.
-    Пульт должен в ответ посылать пакет с подтверждением текущих параметров,
-    отсутствие 4-х пакетов подряд воспринимается как потеря управления и 
-    приводит к сбросу параметров движения, передаваемых вертолету.
+    VVV - battery (512 -> 5V, 999 - max)
  ***************************************************************************
  
-  Формат пакета к S107:
+  IR packet for S107:
+  -------------------
   HH 0YYYYYYY 0PPPPPPP CTTTTTTT 0AAAAAAA F
   Y - Yaw 0-127, (0=left, 63=center, 127=right)
   P - Pitch 0-127, (0=backwards, 63=hold, 127=forward)
@@ -55,26 +64,27 @@
   F - Footer:
       312us HIGH
 
-  Формат пакета к S026 - вариант 1:
-     0     6 7    12 13  16 17  20 21   26
-  HH TTTTTTT YYYYYY   BBBB   PPPP   MMMMM  F
-  T - Throttle 0-127, (63=50%, 127=100%)
-  Y - Yaw 0-63, (0=left, 31=center, 63=right)
-  P - Pitch 0-16, (0=backwards, 7=hold, 15=forward)
-  B - buttons 22-LEFT, 26-RIGHT
-  M - TRIM 0-31
-
-  Формат пакета к S026 - вариант 2:
-  https://www.rcgroups.com/forums/showpost.php?p=15007427&postcount=47
+  IR packet for S026:
+  -------------------
      0     6 7    12 13 14 15 16 17 20 21  26 27
-  HH TTTTTTT YYYYYY  С1 LB RB C2  PPPP MMMMMM  0 F
+  HH TTTTTTT YYYYYY  С1 LB RB C2  PPPP AAAAAA  0 F
   T - Throttle 0-127, (63=50%, 127=100%)
   Y - Yaw 0-63, (111111=left, 100000=neutral, 000001=right)
-  P - Pitch 0-15, (0001=backwards, 1000=neutral, 1111=forward)
-  LB, RB - trim buttons
-  C1,C2 - channel (A=0,1 B=1,1 C=0,0)
-  M - TRIM 0-63, (111111=left, 100000=neutral, 000001=right
+  P - Pitch 0-15, (1111=backwards, 1000=neutral, 0000=forward)
+  LB, RB - trim buttons, "1" - OFF
+  C1,C2 - channel ( A=1,1 ???(B=1,0 C=0,0) )
+  A - TRIM 0-63, (111111=left, 100000=neutral, 000001=right
   27 - always 0
+
+  Timings:
+  HH - Header:
+    470uS  HIGH
+    350uS  LOW
+    1700uS HIGH
+  28 bit Command:
+    "0": 350uS LOW, 460uS HIGH
+    "1": 350uS LOW, 880uS HIGH
+  F - LOW
 ********************************************************* */
  
 #include <TimerOne.h>
@@ -86,13 +96,14 @@
 #define SET_LOW(t)     TCCR2A &= ~_BV(COM2B1); delayMicroseconds(t)
 
 #define SET_LOW_FINAL()   TCCR2A &= ~_BV(COM2B1)
-// длина ИК пакетов в интервалах
+
+// IR packages length (in intervals)
 #define LEN107    67
 #define LEN026    59
-
+// Helicopter type
 #define COPT107   1
 #define COPT026   0
-
+// Helicopter parameters
 #define THR_107   128
 #define THR_026   128
 #define YAW_107   128
@@ -100,29 +111,24 @@
 #define PITCH_107 128
 #define PITCH_026 16
 #define TRIM_107  128
-#define TRIM_026  64  //V1 - 32
-#define CH_107    0   // A
+#define TRIM_026  64
+#define CH_107    0   // channel A
 //#define CH_107    1   // B
-// канал A
+// S026 channel A
 #define CH1_026 1
 #define CH2_026 1
-// канал B
-//#define CH1_026 1
-//#define CH2_026 1
-// канал C
-//#define CH1_026 0
-//#define CH2_026 0
 
-#define AFTER_COUNT 11  // 22 раза послать стоп после обнуления Throttle ~ 4 сек.
 
+#define AFTER_COUNT 11  // after Throttle is zero send IR packets 22 times (~4 sec).
+
+// interval structure
 struct ir_piece {
   bool high;
   unsigned int tm;
 };
 
-// Начальные значения параметров
-uint8_t copter = COPT107;       // Тип: 1 - S111/107, 0 - S026
-
+// Start parameters
+uint8_t copter = COPT107;
 uint8_t Throttle = 0;
 uint8_t YawHalf = 63;
 uint8_t Yaw = YawHalf;
@@ -137,202 +143,20 @@ uint8_t YawMax = YAW_107 - 1;
 uint8_t PitchMax = PITCH_107 - 1;
 uint8_t TrimMax = TRIM_107 - 1;
 
-uint8_t after_count = 0; // до запуска ничего не посылаем
+uint8_t after_count = 0; // do not send IR packets
 
 uint8_t pack_len = LEN107;
 
-// D7 - кнопка аварийного сброса
+// D7 - Reset button
 int buttReset = 7;
-// D12 - вход индикации установленного соединения
-// от HM-10: HIGH - connected, LOW - disconnected
+
+// D12 - HM-10 BLE connection HIGH - connected, LOW - disconnected
 int pinConnected = 12;
 
-ir_piece ir_cmd[100];
+// IR packet intervals array
+ir_piece ir_cmd[72];
 
-/* Отправка команды на Syma S107G/S111G
-void sendCommand(uint8_t ya, uint8_t pit, uint8_t thr, uint8_t tri) {
-    uint8_t data[4];
-    data[3] = ya;
-    data[2] = pit;
-    data[1] = thr | (CH_107 << 7);
-    data[0] = tri;
-
-    // SEND HEADER
-    SET_HIGH(2000);
-    SET_LOW(2000);
-    // SEND DATA
-    for (int8_t j = 3; j >= 0; j--) {
-      uint8_t b = 0x80;
-      for (uint8_t i = 0; i < 8; i++) {
-        if ((data[j] & b) == b) {
-          SET_HIGH(312);
-          SET_LOW(688);
-        }
-        else {
-          SET_HIGH(312);
-          SET_LOW(288);
-        }
-        b = b >> 1;
-      }
-    }
-    // SEND FOOTER
-    SET_HIGH(312);
-    // LOW till the next interrupt kicks in
-    SET_LOW_FINAL();
-}
-*/
-
-/*
-// Отправка команды на  Syma S026
-void sendCommand026(uint8_t ya, uint8_t pit, uint8_t thr, uint8_t tri, uint8_t butt) {
-    uint8_t data[5];
-    data[0] = thr;
-    data[1] = ya;
-    data[2] = butt;
-    data[3] = pit;
-    data[4] = tri;
-
-    // SEND HEADER
-    SET_HIGH(2000);
-    SET_LOW(2000);
-    // SEND DATA
-    for (uint8_t i = 0; i < 7; i++) { // Throttle - 7bit, MSB first
-        if ((data[0] & 0x40) == 0) {  // 0
-            SET_HIGH(300);
-            SET_LOW(500);
-        }
-        else {                        // 1
-            SET_HIGH(300);
-            SET_LOW(900);
-        }
-        data[0] = data[0] << 1;
-    }
-
-    for (uint8_t i = 0; i < 6; i++) { // Yaw - 6bit, MSB first
-        if ((data[1] & 0x20) == 0) {  // 0
-            SET_HIGH(300);
-            SET_LOW(500);
-        }
-        else {                        // 1
-            SET_HIGH(300);
-            SET_LOW(900);
-        }
-        data[1] = data[1] << 1;
-    }
-
-    for (uint8_t i = 0; i < 4; i++) { // Buttons - 4bit, MSB first
-        if ((data[2] & 0x08) == 0) {  // 0
-            SET_HIGH(300);
-            SET_LOW(500);
-        }
-        else {                        // 1
-            SET_HIGH(300);
-            SET_LOW(900);
-        }
-        data[2] = data[2] << 1;
-    }
-
-    for (uint8_t i = 0; i < 4; i++) { // Pitch - 4bit, MSB first
-        if ((data[3] & 0x08) == 0) {  // 0
-            SET_HIGH(300);
-            SET_LOW(500);
-        }
-        else {                        // 1
-            SET_HIGH(300);
-            SET_LOW(900);
-        }
-        data[3] = data[3] << 1;
-    }
-
-    for (uint8_t i = 0; i < 5; i++) { // Trim - 5bit, MSB first
-        if ((data[4] & 0x10) == 0) {  // 0
-            SET_HIGH(300);
-            SET_LOW(500);
-        }
-        else {                        // 1
-            SET_HIGH(300);
-            SET_LOW(900);
-        }
-        data[4] = data[4] << 1;
-    }
-
-    // SEND FOOTER
-    SET_HIGH(300);
-    // LOW till the next interrupt kicks in
-    SET_LOW_FINAL();
-}
-*/
-
-/* Отправка команды на  Syma S026 - вариант 2
-void sendCommand026(uint8_t ya, uint8_t pit, uint8_t thr, uint8_t tri) {
-    uint8_t thr_data = thr << 1;    // 7..1 - throttle
-    uint8_t yaw_data = ya << 2;     // 7..2 - yaw
-    uint8_t pitch_data = pit;       // 3..0 - pitch
-    pitch_data |= (CH1_026 << 7);   // CH1
-    pitch_data |= (CH2_026 << 4);   // CH2
-    pitch_data |= 0x60;             // LB, RB ???
-
-    uint8_t trim_data = tri << 2;     // 7..2 - trim, 00
-    
-    // SEND HEADER
-    SET_HIGH(470);
-    SET_LOW(350);
-    SET_HIGH(1700);
-    // SEND DATA - MSB first для всех, передача с 7-го бита
-    // Throttle - 7 бит
-    for (uint8_t i = 0; i < 7; i++) {
-        SET_LOW(350);
-        if (thr_data & 0x80) {  // 1
-            SET_HIGH(880);
-        }
-        else {                  // 0
-            SET_HIGH(460);
-        }
-        thr_data = thr_data << 1;
-    }
-    // Yaw - 6 бит 
-    for (uint8_t i = 0; i < 6; i++) {
-        SET_LOW(350);
-        if (yaw_data & 0x80) {  // 1
-            SET_HIGH(880);
-        }
-        else {                  // 0
-            SET_HIGH(460);
-        }
-        yaw_data = yaw_data << 1;
-
-    }
-    // Pitch, CH2, RB, LB, CH1 - 8 бит
-    for (uint8_t i = 0; i < 8; i++) {
-        SET_LOW(350);
-        if (pitch_data & 0x80) {  // 1
-            SET_HIGH(880);
-        }
-        else {                    // 0
-            SET_HIGH(460);
-        }
-        pitch_data = pitch_data << 1;
-
-    }
-    // Trim + 0 - 7 бит
-    for (uint8_t i = 0; i < 7; i++) {
-        SET_LOW(350);
-        if (trim_data & 0x80) {  // 1
-            SET_HIGH(880);
-        }
-        else {                        // 0
-            SET_HIGH(460);
-        }
-        trim_data = trim_data << 1;
-    }
-
-    // SEND FOOTER
-    //SET_HIGH(2700);
-    // LOW till the next interrupt kicks in
-    SET_LOW_FINAL();
-}
-*/
-
+// Send IR packet
 void sendCommand(void) {
   for (uint8_t i = 0; i < pack_len; i++) {
     if (ir_cmd[i].high) {
@@ -344,48 +168,49 @@ void sendCommand(void) {
   SET_LOW_FINAL();
 }
 
+// Fill IR packet intervals array
 void setCommand(void) {
 
   uint8_t cnt = 0;
   uint8_t tmp = 0;
   
-  if (copter == COPT026) { // 026
+  if (copter == COPT026) { // S026
     
-    ir_cmd[0].high = true;
+    ir_cmd[0].high = true;  // 470 HIGH
     ir_cmd[0].tm = 470;
     
-    ir_cmd[1].high = false;
+    ir_cmd[1].high = false; // 350 LOW
     ir_cmd[1].tm = 350;
     
-    ir_cmd[2].high = true;
+    ir_cmd[2].high = true;  // 1700 HIGH
     ir_cmd[2].tm = 1700;
 
     uint8_t cnt = 3;
     uint8_t tmp = Throttle << 1;
-    // 7..1 - throttle
+    // 0..6 - Throttle - 7bit
     for (uint8_t i = 0; i < 7; i++) {
-        ir_cmd[cnt].high = false;
+        ir_cmd[cnt].high = false;     // 350 LOW
         ir_cmd[cnt].tm = 350;
         cnt++;
         ir_cmd[cnt].high = true;
-        if (tmp & 0x80) {  // 1
-          ir_cmd[cnt].tm = 880;
+        if (tmp & 0x80) {           // 1
+          ir_cmd[cnt].tm = 880;     // 880 HIGH
         }
-        else {                  // 0
-          ir_cmd[cnt].tm = 460;
+        else {                      // 0
+          ir_cmd[cnt].tm = 460;     // 460 HIGH
         }
         tmp = tmp << 1;
         cnt++;
     }
 
-    // Yaw - 6 бит
+    // 7..12 Yaw - 6bit
     tmp = Yaw << 2; 
     for (uint8_t i = 0; i < 6; i++) {
         ir_cmd[cnt].high = false;
         ir_cmd[cnt].tm = 350;
         cnt++;
         ir_cmd[cnt].high = true;
-        if (tmp & 0x80) {  // 1
+        if (tmp & 0x80) {       // 1
           ir_cmd[cnt].tm = 880;
         }
         else {                  // 0
@@ -399,13 +224,13 @@ void setCommand(void) {
     tmp |= (CH1_026 << 7);   // CH1
     tmp |= (CH2_026 << 4);   // CH2
     tmp |= 0x60;             // LB, RB ???
-
+    // 13..20 = CH1 LB RB CH2 PPPP - 8bit
     for (uint8_t i = 0; i < 8; i++) {
         ir_cmd[cnt].high = false;
         ir_cmd[cnt].tm = 350;
         cnt++;
         ir_cmd[cnt].high = true;
-        if (tmp & 0x80) {  // 1
+        if (tmp & 0x80) {       // 1
           ir_cmd[cnt].tm = 880;
         }
         else {                  // 0
@@ -415,7 +240,7 @@ void setCommand(void) {
         cnt++;
     }
 
-    //Trim + 0
+    // 21..26 Trim + 27=0
     tmp = Trim << 2;
     for (uint8_t i = 0; i < 7; i++) {
         ir_cmd[cnt].high = false;
@@ -432,21 +257,22 @@ void setCommand(void) {
         cnt++;
     }
     
-  } else {  // COPT107
+  } else {  // S107/S111
 
-    ir_cmd[0].high = true;
+    ir_cmd[0].high = true;  // 2000 HIGH
     ir_cmd[0].tm = 2000;
-    ir_cmd[1].high = false;
+    ir_cmd[1].high = false; // 2000 LOW
     ir_cmd[1].tm = 2000;
     
     cnt = 2;
+    
     tmp = Yaw & 0x7F;
     for (uint8_t i = 0; i < 8; i++) {
         ir_cmd[cnt].high = true;
         ir_cmd[cnt].tm = 312;
         cnt++;
         ir_cmd[cnt].high = false;
-        if (tmp & 0x80) {  // 1
+        if (tmp & 0x80) {       // 1
           ir_cmd[cnt].tm = 688;
         }
         else {                  // 0
@@ -462,7 +288,7 @@ void setCommand(void) {
         ir_cmd[cnt].tm = 312;
         cnt++;
         ir_cmd[cnt].high = false;
-        if (tmp & 0x80) {  // 1
+        if (tmp & 0x80) {       // 1
           ir_cmd[cnt].tm = 688;
         }
         else {                  // 0
@@ -478,7 +304,7 @@ void setCommand(void) {
         ir_cmd[cnt].tm = 312;
         cnt++;
         ir_cmd[cnt].high = false;
-        if (tmp & 0x80) {  // 1
+        if (tmp & 0x80) {       // 1
           ir_cmd[cnt].tm = 688;
         }
         else {                  // 0
@@ -511,14 +337,16 @@ void setCommand(void) {
   }
 
   ir_cmd[cnt].high = false;
-  ir_cmd[cnt].tm = 8000;
+  ir_cmd[cnt].tm = 0;
 
 }
 
-#define battPin A0  // вход измерения напряжения батареи
+#define battPin A0  // ADC input for battery
 
+// Status package (to BLE)
 char pack[64];
 
+// Send package with device status
 void sendState(void) {
 
     int batt = analogRead(battPin);
@@ -541,27 +369,18 @@ void sendState(void) {
     }
 }
 
-// Отправка команды по прерыванию от таймера - постоянно
+// Timer interrupt
 void timerISR() {
-    if (after_count > 0) {  // посылаем команды только при наличии управления и 4 сек. после
-      sendCommand();
-      /*
-        if (copter == 0) {
-            sendCommand026(Yaw, Pitch, Throttle, Trim);
-        }
-        else {
-            sendCommand(Yaw, Pitch, Throttle, Trim);
-        }
-      */
+    if (after_count > 0) {  // send IR packets only if connection is active
+        sendCommand();
         if (Throttle == 0) {
             after_count--;
         }
     }       
 }
 
-// Смена типа вертолета, используется также для сброса параметров
+// Change helicopter type, can be used for resetting control parameters
 void setCopter(uint8_t copt) {
-
     noInterrupts();
     after_count = 0;    
     Throttle = 0;
@@ -579,7 +398,8 @@ void setCopter(uint8_t copt) {
         PitchMax = PITCH_107 - 1;
         TrimMax = TRIM_107 - 1;      
         pack_len = LEN107;
-    }    
+    }
+        
     copter = copt;
     YawHalf = YawMax / 2;
     Yaw = YawHalf;
@@ -592,7 +412,7 @@ void setCopter(uint8_t copt) {
     interrupts();
 }
 
-#define STAT_INTERVAL   500   // интервал отправки статуса, mS
+#define STAT_INTERVAL   500   // staus sending interval, mS
 
 unsigned long timeStat = 0;
 unsigned long timeNow = 0;
@@ -606,18 +426,18 @@ void setup() {
     pinMode(3, OUTPUT);
     digitalWrite(3, LOW);
 
-    // кнопка сброса 
+    // reset button 
     pinMode(buttReset,INPUT);
     digitalWrite(buttReset, HIGH);
 
     // HIGH - BLE connected
     pinMode(pinConnected, INPUT);
 
-    // LED - на Ардуино
+    // LED
     pinMode(13, OUTPUT);
     digitalWrite(13, LOW);
 
-    //setup interrupt interval: 180ms
+    //Timer interrupt interval: 180ms
     Timer1.initialize(180000);  //180000
     Timer1.attachInterrupt(timerISR);
 
@@ -651,22 +471,16 @@ void loop() {
     char val[8];
     bool set_copt = false;
 
-    // Если нет соединения и параметры не соответствуют начальным - сброс
-    if (digitalRead(pinConnected) == LOW) {
-        if ((Throttle > 0) || (Pitch != PitchHalf) || 
-            (Yaw != YawHalf) || (Trim != TrimHalf) ) {
-            setCopter(copter);
-        }
-    } else {
-    
+    // If BLE connection is not established and Throttle is not zero - resetting
+    if ((digitalRead(pinConnected) == LOW) && (Throttle > 0)) {
+        setCopter(copter);
+    } else {    
         if (Serial.available() > 0) {      
             char ch = Serial.read();
             if ((ch != '\n') && (icmd < 20)) {
                 stcmd[icmd++] = ch;
             } else {
-                //Serial.print("rec: ");
-                //Serial.println(stcmd);
-                if (icmd >= 19) {  // нормальный пакет
+                if (icmd >= 19) {  // right packet length
                     strncpy(val, &stcmd[0], 3);
                     val[3] = '\0';
                     hh = atoi(val);
@@ -699,32 +513,26 @@ void loop() {
                     strncpy(val, &stcmd[15], 4);
                     val[4] = '\0';
                     sum = atoi(val);
-                    /*
-                    sprintf(sttt, "New: %d %d %d %d %d %d %d\n", hh, thr, ya, pit, tri, sum,
-                      hh + thr + ya + pit + tri);
-                    Serial.print(sttt);
-                    */
+
                     set_copt = false;
-                    // контрольная сумма совпала и тип правильный
+                    // control sum and type are OK
                     if ( (sum == (hh + thr + ya + pit + bt + tri)) &&
                       ((hh == 107) || (hh == 111) || (hh == 26)) ) {
 
                         if (hh == 26) {                          
                           if (copter == COPT107) {
-                            copter = COPT026; // сменился тип вертолета
+                            copter = COPT026; // helicopter type is changed
                             set_copt = true;
                           }    
                         } else {
                           if (copter == COPT026) {
-                            copter = COPT107; // сменился тип вертолета
+                            copter = COPT107; // helicopter type is changed
                             set_copt = true;                            
                           }
                         }      
-                                  
-                        //sprintf(sttt, "New: %d %d %d %d\n", thr, ya, pit, tri);
-                        //Serial.print(sttt);
                         
-                        if (set_copt) { // при смене типа остальные значения игнорируются
+                        if (set_copt) { 
+                            // changing helicopter type and resetting parameters
                             setCopter(copter);  
                         } else {
                             noInterrupts();
@@ -739,27 +547,27 @@ void loop() {
                             }
                             Trim = (uint8_t)(TrimMax - tri);
                             Throttle = (uint8_t)thr;
-                            if (Throttle > 0) { // включаем передачу ИК пакетов
+                            if (Throttle > 0) { 
+                                // enable sending IR packages
                                 after_count = AFTER_COUNT;
                             }
                             setCommand();
                             interrupts();
-                        }
-                        
+                        }                        
                     }
-                } // нормальный пакет
-                                     
+                } // right packet length
+                // reset input package
+                icmd = 0;                                     
                 stcmd[icmd] = '\0';
-                icmd = 0;
-                noCmdCounter = 0; // был принят пакет от пульта
+                noCmdCounter = 0; // packet from BLE was received
                 digitalWrite(13, LOW);         
             } // принят пакет 
         } else {  // нет байтов из BLE
             timeNow = millis();
             if ((timeNow - timeStat) > STAT_INTERVAL) {
-                if (++noCmdCounter > 4) { // на 4 статуса не было ответа
+                if (++noCmdCounter > 4) { // 4 packets from BLE were lost
                     digitalWrite(13, HIGH);
-                    setCopter(copter);  // сбрасываем параметры движения
+                    setCopter(copter);  // resetting parameters
                     noCmdCounter = 0;  
                 }
                 
@@ -767,5 +575,5 @@ void loop() {
                 timeStat = millis();
             }
         }
-    } // есть соединение по BLE
+    } // BLE connection is established
 }
