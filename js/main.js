@@ -1,50 +1,58 @@
 /*
-    Пульт управления вертолетами с IR излучателем на базе Ардуино c модулем HM-10 через BLE
-    =======================================================================================
+    Nikolay Belov
+    -------------
 
-    Формат пакета к Ардуино для S107G/S111G:
-                            ---------------
-    HHH TTT YYY PPP MMM SSSS\n - 20 байт
+    Remote control for Syma S107/S111 and S026 IR Helicopters.
+    Works with Arduino based IR transmitter(with HM-10 module) via BLE.
+
+    Inspired me: https://habr.com/ru/post/339146/
+     =======================================================================================
+
+    Packet to Arduino for S107G/S111G:
+    ----------------------------------
+    HHH TTT YYY PPP AAA SSSS\n - 20 байт
     HHH = 107
     TTT - Throttle          0..127
     YYY - Yaw               0..127
     PPP - Pitch             0..127
-    MMM - Trim              0..127
-    SSSS - контрольная сумма HHH + TTT + YYY + PPP + MMM
+    AAA - Trim              0..127
+    SSSS - control sum (HHH + TTT + YYY + PPP + AAA)
     
-    для S026:
-    --------
-    HHH TTT YYY PP B MMM SSSS\n - 20 байт
+    Packet to Arduino for S026:
+    ---------------------------
+    HHH TTT YYY PP B AAA SSSS\n - 20 байт
     HHH = 026
     TTT - Throttle          0..127
     YYY - Yaw               0..63
     PP  - Pitch             0..15
     B   - Buttons           0..3
-    MMM - Trim              0..63   // 0..31
-    SSSS - контрольная сумма HHH + TTT + YYY + PP + B + MMM
+    AAA - Trim              0..63   // 0..31
+    SSSS - control sum (HHH + TTT + YYY + PP + B + AAA)
 
-    Пакет от Ардуино:
-          ----------
-    текущие параметры:
+    Packet from Arduino:
+    --------------------
+    current parameters:
     107 TTT YYY PPP VVV SSSS\n - 20 байт
-    или
+    or
     026 TTT YYY PP B VVV SSSS\n
 
-    VVV - напряжение батареи 512 -> 5 вольт
+    VVV - battery level (512 -> 5V)
 
-    После установления соединения c Ардуино через BLE
-    с интервалом в 500мС приходят пакеты с состоянием.
-    Данный пульт должен в ответ посылать пакет с подтверждением текущих параметров,
-    отсутствие 4-х пакетов подряд воспринимается как потеря управления и 
-    приводит к сбросу параметров движения, передаваемых вертолету.
-    
-    Изменение параметров через органы управления вызывают немедленную отправку пакета.
+    If connection to Arduino via BLE is established this application receiving 
+    status packets every 500 mS.
+    Application must response to every packet with own packed with actual parameters.
+
+    If user changes control parameters, control packet will be sent immediately.
 */
 
-
+// Joystick parameters
 const joystickSize = 160;
 const deadZone = 16;
 
+// Helicopter parameters
+const copter107 = '107';
+const copter111 = '111';
+const copter026 = '026';
 
 const maxThrottle = 127;
 
@@ -62,10 +70,7 @@ const stepYaw026 = 0.5;
 const stepPitch026 = 0.125;
 const stepTrim026 = 0.5;
 
-const copter107 = '107';
-const copter111 = '111';
-const copter026 = '026';
-
+// Init parameters
 var copterType = copter107;
 
 var maxYaw = maxYaw107;
@@ -95,32 +100,13 @@ var statPitch = 0;
 var statTrim = 0;
 var statButt = 0;
 
-/*
-var storage = window.localStorage;
-
-var remote_ip = storage.getItem("remote_ip");
-if (!remote_ip) {
-    //remote_ip = "192.168.4.22";
-    remote_ip = "127.0.0.1";
-    storage.setItem("remote_ip", remote_ip);
-}
-
-var remote_port = storage.getItem("remote_port");
-if (!remote_port) {
-    remote_port = 2012;
-    storage.setItem("remote_port", remote_port);
-}
-*/
-
-// Кэш объекта выбранного устройства
+// Object cache of the selected device
 let deviceCache = null;
-// Кэш объекта характеристики
+// Feature Object Cache
 let characteristicCache = null;
 
-/* ============================== BLE =============================
+/* ============================== BLE ============================= */
 
-* Запустить выбор Bluetooth устройства и подключиться к выбранному
-*/
 function connect() {
     var ret = (deviceCache ? Promise.resolve(deviceCache) :
         requestBluetoothDevice()).
@@ -140,7 +126,7 @@ function connect() {
     return ret;
 }
 
-// Запрос выбора Bluetooth устройства
+// Device request
 function requestBluetoothDevice() {
     //
     //writeToScreen('Requesting bluetooth device...');
@@ -160,7 +146,6 @@ function requestBluetoothDevice() {
         });
 }
 
-// Обработчик разъединения
 function handleDisconnection(event) {
     let device = event.target;
 
@@ -175,7 +160,6 @@ function handleDisconnection(event) {
     //document.getElementById("togglesw").checked = false;
 }
 
-// Отключиться от подключенного устройства
 function disconnect() {
     if (deviceCache) {
         //writeToScreen('Disconnecting from "' + deviceCache.name + '" bluetooth device...');
@@ -192,7 +176,7 @@ function disconnect() {
         }
     }
 
-     // Добавленное условие
+     // added condition
     if (characteristicCache) {
         characteristicCache.removeEventListener('characteristicvaluechanged',
             handleCharacteristicValueChanged);
@@ -200,12 +184,9 @@ function disconnect() {
     }
 
     deviceCache = null;
-
-    // copterChange(document.getElementById('soflow-color').value);
-
 }
 
-// Подключение к определенному устройству, получение сервиса и характеристики
+// Connect to device and get the characteristic
 function connectDeviceAndCacheCharacteristic(device) {
     //
     if (device.gatt.connected && characteristicCache) {
@@ -233,7 +214,7 @@ function connectDeviceAndCacheCharacteristic(device) {
         });
 }
 
-// Включение получения уведомлений об изменении характеристики
+// Enable getting characteristic changes notification
 function startNotifications(characteristic) {
     //
     //writeToScreen('Starting notifications...');
@@ -241,23 +222,23 @@ function startNotifications(characteristic) {
     return characteristic.startNotifications().
         then(() => {
             //writeToScreen('Notifications started');
-            // Добавленная строка
+            // added string
             characteristic.addEventListener('characteristicvaluechanged',
                 handleCharacteristicValueChanged);
         });
 }
 
 
-/* ================ индикаторы Throttle, Pitch, Yaw ================ */
+/* ================ Throttle, Pitch and Yaw Indicators ================ */
 function Gauge(el) {
 
         // ##### Private Properties and Attributes
 
-        var element,      // Containing element for the info component
-                data,         // `.gauge--data` element
-                needle,       // `.gauge--needle` element
-                value = 0.0,  // Current gauge value from 0 to 1
-                prop;         // Style for transform
+        var element,            // Containing element for the info component
+                data,           // `.gauge--data` element
+                needle,         // `.gauge--needle` element
+                value = 0.0,    // Current gauge value from 0 to 1
+                prop;           // Style for transform
 
         // ##### Private Methods and Functions
 
@@ -307,6 +288,7 @@ function Gauge(el) {
         return exports;
 };
 
+// Create indicators
 var gaugepi = new Gauge(document.getElementById("gaugepi"));
 var gaugeya = new Gauge(document.getElementById("gaugeya"));
 var gaugeth = new Gauge(document.getElementById("gaugeth"));
@@ -339,21 +321,8 @@ gaugeUpdate();
 var win_width = window.screen.availWidth;
 document.body.style.width = win_width;
 var win_height = window.screen.availHeight;
-/*
-document.body.style.height = 600 + 'px';
-document.html.style.height = 600 + 'px';
 
-var ctrlCont = document.getElementById('control-container');
-var wh = document.documentElement.getBoundingClientRect().height; //ctrlCont.style.height;
-var ww = document.documentElement.getBoundingClientRect().width;
-var ch = ctrlCont.getBoundingClientRect().height;
-var dpi = window.devicePixelRatio;
-ctrlCont.style.top = (wh - ch) + 'px';  //91
-
-writeToScreen('height: ' + wh + '   width: ' + ww + '  ch: ' + ch + '  dpi: ' + dpi);
-*/
-
-/* =================== обработка смены типа вертолета =================== */
+/* =================== Change helicopter type =================== */
 function copterChange(value) {
     if ((value === 'Syma S111G') || (value === 'Syma S107G')) {
         if (value === 'Syma S107G') {
@@ -402,10 +371,10 @@ function resetParameters() {
     document.getElementById("togglesw").checked = false;
 }
 
+// Receiving packet from Arduino
 function handleCharacteristicValueChanged(event) {
     let value = new TextDecoder().decode(event.target.value);
     //writeToScreen('rec: ' + value);
-
 
     var rType = parseInt(value.substring(0, 3));
     statThrottle = parseInt(value.substring(3, 6));
@@ -427,10 +396,11 @@ function handleCharacteristicValueChanged(event) {
         gaugeUpdate();
     }
     
-    // на каждый принятый пакет отвечаем текущими параметрами
+    // response to received packet
     sendToBLE();
 }
 
+// Enable / Disable connection to IR transmitter (Arduino)
 function crtrl_on(sw) {
     // сброс параметров движения
     copterChange(document.getElementById('soflow-color').value);
@@ -444,13 +414,9 @@ function crtrl_on(sw) {
         disconnect();
         ctrlFlag = false;
     }
-
-/*
-    document.getElementById('battery').value = Math.round(Math.random() * 999) * kBattery;
-*/
 }
 
-
+// send message via BLE
 function doSend(message) {
     message = String(message);
     if (!message || !characteristicCache) {
@@ -460,12 +426,12 @@ function doSend(message) {
     //writeToScreen('send: ' + message);
 }
 
-// Записать значение в характеристику
+// write value to characteristic
 function writeToCharacteristic(characteristic, data) {
     characteristic.writeValue(new TextEncoder().encode(data));
 }
 
-
+// for debug
 const scrLen = 10;
 function writeToScreen(message) {
     //var outputEl = document.getElementById('diagmsg');
@@ -489,7 +455,7 @@ function cleanScreen() {
     }    
 }
 
-//function sendToBLE(token, newcmd, par1, devnum) {
+// Make package for IR transmitter and send via BLE
 function sendToBLE() {
 
     var st = '';
@@ -520,11 +486,12 @@ function sendToBLE() {
 };
 
 
-/* ==================== JoyStick Yaw & Pitch ==================== */
-// предыдущее касание - расстояния от центра
+/* ==================== Yaw & Pitch JoyStick ==================== */
+// previous touch - distance from joystick center
 var joyX = 0;
 var joyY = 0;
 
+// Create joystick
 var joystickYawPitch = nipplejs.create({
     zone: document.getElementById('pitchyaw'),
     multitouch: false,
@@ -533,14 +500,13 @@ var joystickYawPitch = nipplejs.create({
     color: 'blue',
     size: joystickSize
 });
-joystickYawPitch.on('move', function (evt, nipple) {
 
+joystickYawPitch.on('move', function (evt, nipple) {
     // x, y - px, integer 
-    var x = nipple.position.x - nipple.instance.position.x; // > 0 - yaw вправо
-    var y = nipple.position.y - nipple.instance.position.y; // > 0 = pitch назад
+    var x = nipple.position.x - nipple.instance.position.x; // > 0 - yaw right
+    var y = nipple.position.y - nipple.instance.position.y; // > 0 = pitch backward
 
     var flMove = false;
-
     if (Math.abs(x) <= deadZone) {
         x = 0;
     } else {
@@ -565,10 +531,10 @@ joystickYawPitch.on('move', function (evt, nipple) {
 
     if (flMove) {
         flMove = false;
-        if ( (joyY !== y) || (joyX !== x) ) {   // было смещение
+        if ( (joyY !== y) || (joyX !== x) ) {   // moving
             flMove = true;
 
-            setPitch = halfPitch - Math.round(y * stepPitch);  // > 0 - назад
+            setPitch = halfPitch - Math.round(y * stepPitch);  // > 0 - backward
             if (setPitch > maxPitch) {
                 setPitch = maxPitch;
             } else if (setPitch < 0) {
@@ -576,7 +542,7 @@ joystickYawPitch.on('move', function (evt, nipple) {
             }
             joyY = y;
 
-            setYaw = halfYaw + Math.round(x * stepYaw);     // > 0 - вправо
+            setYaw = halfYaw + Math.round(x * stepYaw);     // > 0 - right
             if (setYaw > maxYaw) {
                 setYaw = maxYaw;
             } else if (setYaw < 0) {
@@ -597,10 +563,11 @@ joystickYawPitch.on('move', function (evt, nipple) {
 joystickYawPitch.on('end', function () {
     setPitch = halfPitch;
     setYaw = halfYaw;
-    gaugeUpdate();
-    sendToBLE();
+    gaugeUpdate();      // indicators update
+    sendToBLE();        // send package to IR transmitter
 });
 
+// Calculate current joystick center coordinates
 function calcContCenter(cont) {
     var bodyRect = document.body.getBoundingClientRect();
     var contRect = document.getElementById(cont).getBoundingClientRect();
@@ -612,14 +579,14 @@ function calcContCenter(cont) {
     return centerXY;
 }
 
+// Throttle slider value were changed
 function throttleInput(value) {
     document.getElementById('lthrottle').innerHTML = 'Throttle: ' + value;
     setThrottle = value;
-    gaugeUpdate();
-    sendToBLE();
+    gaugeUpdate();      // indicators update
+    sendToBLE();        // send package to IR transmitter
 }
 
 function resize_on() {
 
 }
-
