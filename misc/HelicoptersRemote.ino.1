@@ -147,19 +147,6 @@ uint8_t after_count = 0; // do not send IR packets
 
 uint8_t pack_len = LEN107;
 
-<<<<<<< HEAD
-// D4 - удержание питания
-int pwrHold = 4;
-
-// D7 - кнопка аварийного сброса
-int buttReset = 7;
-// D12 - вход индикации установленного соединения
-// от HM-10: HIGH - connected, LOW - disconnected
-int pinConnected = 12;
-
-ir_piece ir_cmd[100];
-
-=======
 // D7 - Reset button
 int buttReset = 7;
 
@@ -168,7 +155,6 @@ int pinConnected = 12;
 
 // IR packet intervals array
 ir_piece ir_cmd[72];
->>>>>>> 797ea21368bcfb371592735f30879368e54bca2a
 
 // Send IR packet
 void sendCommand(void) {
@@ -426,25 +412,15 @@ void setCopter(uint8_t copt) {
     interrupts();
 }
 
-<<<<<<< HEAD
-#define STAT_INTERVAL         500   // интервал отправки статуса, mS
-#define NO_ACTIVITY_INTERVAL  360   // STAT_INTERVAL * 120 = 3 min
-=======
 #define STAT_INTERVAL   500   // staus sending interval, mS
->>>>>>> 797ea21368bcfb371592735f30879368e54bca2a
 
 unsigned long timeStat = 0;
 unsigned long timeNow = 0;
 int noCmdCounter = 0;
-int noActivityCnt = 0;
 
 
 void setup() {
     Serial.begin(115200);
-
-    // Удержание питания
-    pinMode(pwrHold, OUTPUT);
-    digitalWrite(pwrHold, HIGH);
    
     // IR LEDS
     pinMode(3, OUTPUT);
@@ -481,7 +457,6 @@ void setup() {
 
     timeNow = timeStat = millis();
     noCmdCounter = 0;
-    noActivityCnt = 0;
 }
 
 
@@ -496,26 +471,10 @@ void loop() {
     char val[8];
     bool set_copt = false;
 
-<<<<<<< HEAD
-    if (digitalRead(pwrHold) == LOW) {  // нажата кнопка питания - выключение
-        digitalWrite(pwrHold, LOW);
-        while(true) {};
-    }
-
-    // Если нет соединения и параметры не соответствуют начальным - сброс
-    if (digitalRead(pinConnected) == LOW) {
-        if ((Throttle > 0) || (Pitch != PitchHalf) || 
-            (Yaw != YawHalf) || (Trim != TrimHalf) ) {
-            setCopter(copter);
-        }
-    } else {
-    
-=======
     // If BLE connection is not established and Throttle is not zero - resetting
     if ((digitalRead(pinConnected) == LOW) && (Throttle > 0)) {
         setCopter(copter);
     } else {    
->>>>>>> 797ea21368bcfb371592735f30879368e54bca2a
         if (Serial.available() > 0) {      
             char ch = Serial.read();
             if ((ch != '\n') && (icmd < 20)) {
@@ -600,30 +559,13 @@ void loop() {
                 // reset input package
                 icmd = 0;                                     
                 stcmd[icmd] = '\0';
-<<<<<<< HEAD
-                icmd = 0;
-                noCmdCounter = 0; // был принят пакет от пульта
-                noActivityCnt = 0;
-=======
                 noCmdCounter = 0; // packet from BLE was received
->>>>>>> 797ea21368bcfb371592735f30879368e54bca2a
                 digitalWrite(13, LOW);         
             } // принят пакет 
         } else {  // нет байтов из BLE
             timeNow = millis();
-            
             if ((timeNow - timeStat) > STAT_INTERVAL) {
-<<<<<<< HEAD
-                noActivityCnt++;
-                if (noActivityCnt > NO_ACTIVITY_INTERVAL) { // выключаемся
-                    digitalWrite(pwrHold, LOW);
-                    while(true) {};
-                }
-              
-                if (++noCmdCounter > 4) { // на 4 статуса не было ответа
-=======
                 if (++noCmdCounter > 4) { // 4 packets from BLE were lost
->>>>>>> 797ea21368bcfb371592735f30879368e54bca2a
                     digitalWrite(13, HIGH);
                     setCopter(copter);  // resetting parameters
                     noCmdCounter = 0;  
