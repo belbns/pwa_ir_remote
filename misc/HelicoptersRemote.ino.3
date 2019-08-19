@@ -79,12 +79,6 @@
  
 #include <TimerOne.h>
 
-#define STAT_INTERVAL         500     // интервал отправки статуса, mS
-#define NO_ACTIVITY_INTERVAL  180000  // 3 min - отключение при отсутствии соединения по BLE
-#define NO_COMMAND_INTERVAL   2000    // 2 sec - сброс параметров при отсутствии ответа по BLE
-
-#define AFTER_COUNT 11  // 22 раза послать стоп после обнуления Throttle ~ 4 сек.
-
 // IR Timing
 // set pwm active on pin 3
 #define SET_HIGH(t)    TCCR2A |= _BV(COM2B1); delayMicroseconds(t)
@@ -118,6 +112,8 @@
 // канал C
 //#define CH1_026 0
 //#define CH2_026 0
+
+#define AFTER_COUNT 11  // 22 раза послать стоп после обнуления Throttle ~ 4 сек.
 
 struct ir_piece {
   bool high;
@@ -368,6 +364,14 @@ void sendState(void) {
 void timerISR() {
     if (after_count > 0) {  // посылаем команды только при наличии управления и 4 сек. после
       sendCommand();
+      /*
+        if (copter == 0) {
+            sendCommand026(Yaw, Pitch, Throttle, Trim);
+        }
+        else {
+            sendCommand(Yaw, Pitch, Throttle, Trim);
+        }
+      */
         if (Throttle == 0) {
             after_count--;
         }
@@ -407,9 +411,14 @@ void setCopter(uint8_t copt) {
     interrupts();
 }
 
+#define STAT_INTERVAL         500   // интервал отправки статуса, mS
+#define NO_ACTIVITY_INTERVAL  120   // STAT_INTERVAL * 120 = 3 min
+
 unsigned long timeStat = 0;
-unsigned long timeCmd = 0;
 unsigned long timeNow = 0;
+int noCmdCounter = 0;
+int noActivityCnt = 0;
+
 
 void setup() {
     Serial.begin(115200);
@@ -446,7 +455,9 @@ void setup() {
     OCR2A = 8000 / 38;
     OCR2B = OCR2A / 2; // 50% duty cycle 
 
-    timeNow = timeStat = timeCmd = millis();
+    timeNow = timeStat = millis();
+    noCmdCounter = 0;
+    noActivityCnt = 0;
 }
 
 
@@ -470,21 +481,11 @@ void loop() {
 
     // Если нет соединения и параметры не соответствуют начальным - сброс
     if (digitalRead(pinConnected) == LOW) {
-
         if ((Throttle > 0) || (Pitch != PitchHalf) || 
             (Yaw != YawHalf) || (Trim != TrimHalf) ) {
             setCopter(copter);
         }
-        
-        timeNow = millis();
-        if ((timeNow - timeStat) > STAT_INTERVAL) { // долго нет соединения по BLE - отключаемся
-            digitalWrite(13, HIGH);
-            pinMode(pwrHold, OUTPUT);
-            digitalWrite(pwrHold, LOW);
-            while(true) {};
-        }
-        
-    } else {  // есть соединение по BLE
+    } else {
     
         if (Serial.available() > 0) {      
             char ch = Serial.read();
@@ -575,28 +576,36 @@ void loop() {
                         }
                         
                     }
-                    timeCmd = millis(); // был принят пакет от пульта
+                    noActivityCnt = 0;
+                    noCmdCounter = 0; // был принят пакет от пульта
                 } // нормальный пакет
                                      
                 stcmd[icmd] = '\0';
                 icmd = 0;
                 digitalWrite(13, LOW);         
-            } // принят пакет
-             
+            } // принят пакет 
         } else {  // нет байтов из BLE
             timeNow = millis();
             
-            if ((timeNow - timeCmd) > NO_COMMAND_INTERVAL) { // нет ответа от пульта
-                digitalWrite(13, HIGH);
-                setCopter(copter);  // сбрасываем параметры движения
-                timeCmd = timeNow;                
-            }
+            if ((timeNow - timeStat) > STAT_INTERVAL) {
+                noActivityCnt++;
+                if (noActivityCnt > NO_ACTIVITY_INTERVAL) { // выключаемся
+                    digitalWrite(13, HIGH);
+                    pinMode(pwrHold, OUTPUT);
+                    digitalWrite(pwrHold, LOW);
+                    while(true) {};
 
-            if ((timeNow - timeStat) > NO_COMMAND_INTERVAL) {
+                }
+              
+                if (++noCmdCounter > 4) { // на 4 статуса не было ответа
+                    //digitalWrite(13, HIGH);
+                    setCopter(copter);  // сбрасываем параметры движения
+                    noCmdCounter = 0;  
+                }
+                
                 sendState();
-                timeStat = timeNow;
+                timeStat = millis();
             }
-
         }
-    }
+    } // есть соединение по BLE
 }
