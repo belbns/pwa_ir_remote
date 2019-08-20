@@ -477,7 +477,7 @@ void loop() {
         }
         
         timeNow = millis();
-        if ((timeNow - timeStat) > STAT_INTERVAL) { // долго нет соединения по BLE - отключаемся
+        if ((timeNow - timeStat) > NO_ACTIVITY_INTERVAL) { // долго нет соединения по BLE - отключаемся
             digitalWrite(13, HIGH);
             pinMode(pwrHold, OUTPUT);
             digitalWrite(pwrHold, LOW);
@@ -592,11 +592,12 @@ void loop() {
                 timeCmd = timeNow;                
             }
 
-            if ((timeNow - timeStat) > NO_COMMAND_INTERVAL) {
+            if ((timeNow - timeStat) > STAT_INTERVAL) {
                 sendState();
                 timeStat = timeNow;
             }
 
         }
+        
     }
 }
