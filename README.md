@@ -8,3 +8,4 @@ Inspired me:
 https://habr.com/ru/post/339146/
 https://github.com/infusion/Fritzing/tree/master/Syma-S107G
 https://www.rcgroups.com/forums/showpost.php?p=15007427&postcount=47
+http://www.mosaic-industries.com/embedded-systems/microcontroller-projects/electronic-circuits/push-button-switch-turn-on/latching-toggle-power-switch
