@@ -1,0 +1,4 @@
+Attention!
+Do not flash Arduino with connected HM-10 module
+ - usb interface chip (CH340, FTDI) can be destroyed!
+I think, that's because its internal 3.3V stabilizator is too weak.

@@ -147,9 +147,6 @@ uint8_t pack_len = LEN107;
 
 // D4 - удержание питания
 int pwrHold = 4;
-
-// D7 - кнопка аварийного сброса
-// D12 - вход индикации установленного соединения
 // от HM-10: HIGH - connected, LOW - disconnected
 int pinConnected = 12;
 
